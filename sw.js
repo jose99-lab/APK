@@ -1,10 +1,10 @@
-const CACHE_NAME = 'sillon-v2'; // <-- ovay isaky ny mila update ny cache (v1 -> v2 -> v3...)
+const CACHE_NAME = 'sillon-v2'; // ovay ihany koa satria misy fanovana APP_SHELL
 const APP_SHELL = [
   './index.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
-  './icon-maskable-512.png'
+  './icon-rhj-192.png',
+  './icon-rhj-512.png',
+  './icon-maskable-rhj-512.png'
 ];
 self.addEventListener('install', (event) => {
   event.waitUntil(
