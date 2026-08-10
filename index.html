@@ -80,6 +80,26 @@
     pointer-events:none;
   }
 
+  /* ---------- Search ---------- */
+  .search-wrap{
+    display:flex; align-items:center; gap:10px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:11px 14px;
+    margin-bottom:16px;
+    position:relative;
+    z-index:1;
+  }
+  .search-wrap svg{ width:16px; height:16px; color:var(--muted); flex:none; }
+  .search-wrap input{
+    flex:1;
+    background:none; border:none; outline:none;
+    color:var(--cream);
+    font-family:inherit; font-size:13.5px;
+  }
+  .search-wrap input::placeholder{ color:var(--muted); }
+
   .platter-wrap{
     display:flex;
     justify-content:center;
@@ -100,6 +120,13 @@
     position:relative;
   }
   .platter.spinning{ animation-play-state: running; }
+  .label{
+    width:14px; height:14px; border-radius:50%;
+    background:var(--bg);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.4);
+    position:relative;
+    z-index:1;
+  }
 
   @keyframes spin{ to{ transform:rotate(360deg); } }
 
@@ -337,6 +364,11 @@
   <h1 class="brand">RHJ Player<span>.</span></h1>
 
   <div class="deck">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Rechercher un morceau…">
+    </div>
+
     <div class="platter-wrap">
       <div class="platter" id="platter">
         <div class="label"></div>
@@ -511,6 +543,7 @@ const el = {
   volume: document.getElementById('volume'),
   addBtn: document.getElementById('addBtn'),
   fileInput: document.getElementById('fileInput'),
+  searchInput: document.getElementById('searchInput'),
   trackList: document.getElementById('trackList'),
   emptyState: document.getElementById('emptyState'),
   crateCount: document.getElementById('crateCount'),
@@ -533,9 +566,23 @@ function niceName(filename){
 function renderList(){
   el.trackList.innerHTML = '';
   el.crateCount.textContent = playlist.length + (playlist.length === 1 ? ' morceau' : ' morceaux');
-  el.emptyState.style.display = playlist.length ? 'none' : 'block';
 
-  playlist.forEach((t, i) => {
+  const query = (el.searchInput ? el.searchInput.value : '').trim().toLowerCase();
+  const filtered = query
+    ? playlist.map((t, i) => ({ t, i })).filter(({ t }) => niceName(t.name).toLowerCase().includes(query))
+    : playlist.map((t, i) => ({ t, i }));
+
+  if (!playlist.length){
+    el.emptyState.style.display = 'block';
+    el.emptyState.innerHTML = 'Votre bibliothèque est vide.<br>Ajoutez vos premiers morceaux ci-dessus.';
+  } else if (query && filtered.length === 0){
+    el.emptyState.style.display = 'block';
+    el.emptyState.innerHTML = 'Aucun résultat pour <strong>"' + query + '"</strong>.';
+  } else {
+    el.emptyState.style.display = 'none';
+  }
+
+  filtered.forEach(({ t, i }) => {
     const li = document.createElement('li');
     li.className = 'track-row' + (i === currentIndex ? ' active' : '');
     li.innerHTML = `
@@ -738,6 +785,8 @@ el.groove.addEventListener('click', (e) => {
   const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
   audio.currentTime = pct * audio.duration;
 });
+
+el.searchInput.addEventListener('input', () => renderList());
 
 el.addBtn.addEventListener('click', () => el.fileInput.click());
 el.fileInput.addEventListener('change', async (e) => {
