@@ -91,25 +91,26 @@
     margin-bottom:14px;
   }
   .platter{
-    width:180px; height:180px; border-radius:50%;
-    background:
-      repeating-radial-gradient(circle at center,
-        #0c0a09 0 3px,
-        #131010 3px 6px);
-    box-shadow: inset 0 0 0 1px #000, 0 10px 24px -8px rgba(0,0,0,.8);
-    display:flex; align-items:center; justify-content:center;
-    animation: spin 6s linear infinite;
-    animation-play-state: paused;
-    transition: box-shadow .3s;
-  }
-  .platter.spinning{ animation-play-state: running; }
- .label{
-  width:80px; height:80px; border-radius:50%;
-  background: url('icon-rhj-512.png') center/cover no-repeat;
+  width:180px; height:180px; border-radius:50%;
+  background:
+    url('icon-rhj-512.png') center/cover no-repeat;
+  box-shadow: inset 0 0 0 1px #000, 0 10px 24px -8px rgba(0,0,0,.8);
   display:flex; align-items:center; justify-content:center;
-  box-shadow: 0 0 0 1px rgba(0,0,0,.4);
+  animation: spin 6s linear infinite;
+  animation-play-state: paused;
+  transition: box-shadow .3s;
   position:relative;
 }
+.platter::before{
+  content:"";
+  position:absolute; inset:0;
+  border-radius:50%;
+  background: repeating-radial-gradient(circle at center,
+    rgba(0,0,0,.35) 0 3px,
+    rgba(0,0,0,.15) 3px 6px);
+  pointer-events:none;
+}
+.platter.spinning{ animation-play-state: running; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
 
   .tonearm{
