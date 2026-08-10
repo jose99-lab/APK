@@ -14,8 +14,6 @@
 <style>
   :root{
     --bg:#14110F;
-
-    
     --panel:#1E1A16;
     --panel-2:#242019;
     --groove:#2c2620;
@@ -90,26 +88,26 @@
     height:200px;
     margin-bottom:14px;
   }
-.platter{
-  width:180px; height:180px; border-radius:50%;
-  background:
-    url('photos.png') center/cover no-repeat;
-  box-shadow: inset 0 0 0 1px #000, 0 10px 24px -8px rgba(0,0,0,.8);
-  display:flex; align-items:center; justify-content:center;
-  animation: spin 6s linear infinite;
-  animation-play-state: paused;
-  transition: box-shadow .3s;
-  position:relative;
-}
-.platter.spinning{ animation-play-state: running; }
-.label{
-  width:14px; height:14px; border-radius:50%;
-  background:var(--bg);
-  box-shadow: 0 0 0 1px rgba(0,0,0,.4);
-  position:relative;
-  z-index:1;
-}
-@keyframes spin{ to{ transform:rotate(360deg); } }
+  .platter{
+    width:180px; height:180px; border-radius:50%;
+    background:
+      url('photos.png') center/cover no-repeat;
+    box-shadow: inset 0 0 0 1px #000, 0 10px 24px -8px rgba(0,0,0,.8);
+    display:flex; align-items:center; justify-content:center;
+    animation: spin 6s linear infinite;
+    animation-play-state: paused;
+    transition: box-shadow .3s;
+    position:relative;
+  }
+  .platter.spinning{ animation-play-state: running; }
+  .label{
+    width:14px; height:14px; border-radius:50%;
+    background:var(--bg);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.4);
+    position:relative;
+    z-index:1;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
 
   .tonearm{
     position:absolute;
@@ -227,6 +225,26 @@
     box-shadow:0 1px 4px rgba(0,0,0,.5);
   }
 
+  /* ---------- Equalizer ---------- */
+  .eq-panel{
+    max-height:0;
+    overflow:hidden;
+    transition: max-height .3s ease, margin .3s ease;
+    margin-top:0;
+  }
+  .eq-panel.open{
+    max-height:160px;
+    margin-top:14px;
+  }
+  .eq-row{
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:10px;
+    font-size:12px; color:var(--muted);
+  }
+  .eq-row label{ width:60px; flex:none; }
+  .eq-row span{ width:26px; text-align:right; flex:none; font-variant-numeric: tabular-nums; }
+  .eq-row input[type=range]{ flex:1; }
+
   /* ---------- Playlist ---------- */
   .crate{ margin-top:26px; }
   .crate-head{
@@ -327,20 +345,20 @@
   <div class="deck">
     <div class="platter-wrap">
       <div class="platter" id="platter">
-       
+        <div class="label"></div>
       </div>
-     <div class="tonearm" id="tonearm">
-  <svg viewBox="0 0 86 86">
-    <defs>
-      <clipPath id="tonearmHeadClip">
-        <circle cx="76" cy="10" r="7"/>
-      </clipPath>
-    </defs>
-    <image href="icon-rhj-512.png" x="64" y="-2" width="24" height="24" clip-path="url(#tonearmHeadClip)" preserveAspectRatio="xMidYMid slice"/>
-    <line x1="76" y1="10" x2="18" y2="66" stroke="var(--cream)" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="18" cy="66" r="3.5" fill="var(--amber)"/>
-  </svg>
-</div>
+      <div class="tonearm" id="tonearm">
+        <svg viewBox="0 0 86 86">
+          <defs>
+            <clipPath id="tonearmHeadClip">
+              <circle cx="76" cy="10" r="7"/>
+            </clipPath>
+          </defs>
+          <image href="icon-rhj-512.png" x="64" y="-2" width="24" height="24" clip-path="url(#tonearmHeadClip)" preserveAspectRatio="xMidYMid slice"/>
+          <line x1="76" y1="10" x2="18" y2="66" stroke="var(--cream)" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="18" cy="66" r="3.5" fill="var(--amber)"/>
+        </svg>
+      </div>
     </div>
 
     <div class="now-playing">
@@ -373,11 +391,32 @@
       <button class="btn-round toggle" id="repeatBtn" title="Répéter">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
       </button>
+      <button class="btn-round toggle" id="eqBtn" title="Égaliseur">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      </button>
     </div>
 
     <div class="volume">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
       <input type="range" id="volume" min="0" max="1" step="0.01" value="0.9">
+    </div>
+
+    <div class="eq-panel" id="eqPanel">
+      <div class="eq-row">
+        <label>Basses</label>
+        <input type="range" id="eqBass" min="-15" max="15" step="1" value="0">
+        <span id="eqBassVal">0</span>
+      </div>
+      <div class="eq-row">
+        <label>Médiums</label>
+        <input type="range" id="eqMid" min="-15" max="15" step="1" value="0">
+        <span id="eqMidVal">0</span>
+      </div>
+      <div class="eq-row">
+        <label>Aigus</label>
+        <input type="range" id="eqTreble" min="-15" max="15" step="1" value="0">
+        <span id="eqTrebleVal">0</span>
+      </div>
     </div>
   </div>
 
@@ -582,6 +621,83 @@ function step(delta){
   loadTrack(next, true);
 }
 
+/* ---------------- Audio-reactive glow + Equalizer ---------------- */
+let audioCtx, analyser, audioSource, freqData, pulseRAF;
+let bassFilter, midFilter, trebleFilter;
+
+function setupAnalyser(){
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  audioSource = audioCtx.createMediaElementSource(audio);
+
+  bassFilter = audioCtx.createBiquadFilter();
+  bassFilter.type = 'lowshelf';
+  bassFilter.frequency.value = 200;
+
+  midFilter = audioCtx.createBiquadFilter();
+  midFilter.type = 'peaking';
+  midFilter.frequency.value = 1000;
+  midFilter.Q.value = 1;
+
+  trebleFilter = audioCtx.createBiquadFilter();
+  trebleFilter.type = 'highshelf';
+  trebleFilter.frequency.value = 3000;
+
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 64;
+  freqData = new Uint8Array(analyser.frequencyBinCount);
+
+  audioSource.connect(bassFilter);
+  bassFilter.connect(midFilter);
+  midFilter.connect(trebleFilter);
+  trebleFilter.connect(analyser);
+  analyser.connect(audioCtx.destination);
+}
+
+function pulseLoop(){
+  if (!analyser) return;
+  analyser.getByteFrequencyData(freqData);
+  const bass = (freqData[0] + freqData[1] + freqData[2]) / 3 / 255;
+  const glowSize = 12 + bass * 46;
+  const glowAlpha = 0.18 + bass * 0.5;
+  el.platter.style.boxShadow =
+    `inset 0 0 0 1px #000, 0 10px 24px -8px rgba(0,0,0,.8), 0 0 ${glowSize}px ${glowSize / 2}px rgba(232,163,61,${glowAlpha})`;
+  pulseRAF = requestAnimationFrame(pulseLoop);
+}
+
+function stopPulse(){
+  if (pulseRAF) cancelAnimationFrame(pulseRAF);
+  el.platter.style.boxShadow = '';
+}
+
+/* ---- EQ controls ---- */
+const eqBtn = document.getElementById('eqBtn');
+const eqPanel = document.getElementById('eqPanel');
+const eqBass = document.getElementById('eqBass');
+const eqMid = document.getElementById('eqMid');
+const eqTreble = document.getElementById('eqTreble');
+const eqBassVal = document.getElementById('eqBassVal');
+const eqMidVal = document.getElementById('eqMidVal');
+const eqTrebleVal = document.getElementById('eqTrebleVal');
+
+eqBtn.addEventListener('click', () => {
+  eqPanel.classList.toggle('open');
+  eqBtn.classList.toggle('active');
+});
+
+eqBass.addEventListener('input', () => {
+  eqBassVal.textContent = eqBass.value;
+  if (bassFilter) bassFilter.gain.value = Number(eqBass.value);
+});
+eqMid.addEventListener('input', () => {
+  eqMidVal.textContent = eqMid.value;
+  if (midFilter) midFilter.gain.value = Number(eqMid.value);
+});
+eqTreble.addEventListener('input', () => {
+  eqTrebleVal.textContent = eqTreble.value;
+  if (trebleFilter) trebleFilter.gain.value = Number(eqTreble.value);
+});
+
 /* ---------------- Events ---------------- */
 audio.addEventListener('play', () => {
   setPlayingVisual(true);
@@ -650,35 +766,7 @@ el.fileInput.addEventListener('change', async (e) => {
     renderList();
   }
 });
-/* ---------------- Audio-reactive glow ---------------- */
-let audioCtx, analyser, audioSource, freqData, pulseRAF;
 
-function setupAnalyser(){
-  if (audioCtx) return;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  audioSource = audioCtx.createMediaElementSource(audio);
-  analyser = audioCtx.createAnalyser();
-  analyser.fftSize = 64;
-  audioSource.connect(analyser);
-  analyser.connect(audioCtx.destination);
-  freqData = new Uint8Array(analyser.frequencyBinCount);
-}
-
-function pulseLoop(){
-  if (!analyser) return;
-  analyser.getByteFrequencyData(freqData);
-  const bass = (freqData[0] + freqData[1] + freqData[2]) / 3 / 255;
-  const glowSize = 12 + bass * 46;
-  const glowAlpha = 0.18 + bass * 0.5;
-  el.platter.style.boxShadow =
-    `inset 0 0 0 1px #000, 0 10px 24px -8px rgba(0,0,0,.8), 0 0 ${glowSize}px ${glowSize / 2}px rgba(232,163,61,${glowAlpha})`;
-  pulseRAF = requestAnimationFrame(pulseLoop);
-}
-
-function stopPulse(){
-  if (pulseRAF) cancelAnimationFrame(pulseRAF);
-  el.platter.style.boxShadow = '';
-}
 /* ---------------- Init ---------------- */
 (async function init(){
   try {
