@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sillon-v1';
+const CACHE_NAME = 'sillon-v2'; // <-- ovay isaky ny mila update ny cache (v1 -> v2 -> v3...)
 const APP_SHELL = [
   './index.html',
   './manifest.json',
@@ -6,14 +6,12 @@ const APP_SHELL = [
   './icon-512.png',
   './icon-maskable-512.png'
 ];
-
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
   );
   self.skipWaiting();
 });
-
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -22,11 +20,8 @@ self.addEventListener('activate', (event) => {
   );
   self.clients.claim();
 });
-
 self.addEventListener('fetch', (event) => {
-  // Only handle same-origin GET requests for the app shell.
   if (event.request.method !== 'GET') return;
-
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
