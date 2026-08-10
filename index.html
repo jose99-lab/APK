@@ -103,17 +103,20 @@
     transition: box-shadow .3s;
   }
   .platter.spinning{ animation-play-state: running; }
-  .label{
-    width:64px; height:64px; border-radius:50%;
-    background: radial-gradient(circle at 35% 30%, #f2c069, var(--amber) 60%, var(--amber-dim) 100%);
-    display:flex; align-items:center; justify-content:center;
-    box-shadow: 0 0 0 1px rgba(0,0,0,.4);
-  }
-  .label::after{
-    content:"";
-    width:8px; height:8px; border-radius:50%;
-    background:var(--bg);
-  }
+ .label{
+  width:64px; height:64px; border-radius:50%;
+  background: url('icon-rhj-512.png') center/cover no-repeat;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.4);
+  position:relative;
+}
+.label::after{
+  content:"";
+  position:absolute;
+  width:8px; height:8px; border-radius:50%;
+  background:var(--bg);
+  z-index:1;
+}
   @keyframes spin{ to{ transform:rotate(360deg); } }
 
   .tonearm{
