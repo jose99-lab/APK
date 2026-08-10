@@ -589,8 +589,16 @@ function step(delta){
 }
 
 /* ---------------- Events ---------------- */
-audio.addEventListener('play', () => setPlayingVisual(true));
-audio.addEventListener('pause', () => setPlayingVisual(false));
+audio.addEventListener('play', () => {
+  setPlayingVisual(true);
+  setupAnalyser();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  pulseLoop();
+});
+audio.addEventListener('pause', () => {
+  setPlayingVisual(false);
+  stopPulse();
+});
 audio.addEventListener('timeupdate', () => {
   if (!audio.duration) return;
   const pct = (audio.currentTime / audio.duration) * 100;
@@ -648,7 +656,35 @@ el.fileInput.addEventListener('change', async (e) => {
     renderList();
   }
 });
+/* ---------------- Audio-reactive glow ---------------- */
+let audioCtx, analyser, audioSource, freqData, pulseRAF;
 
+function setupAnalyser(){
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  audioSource = audioCtx.createMediaElementSource(audio);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 64;
+  audioSource.connect(analyser);
+  analyser.connect(audioCtx.destination);
+  freqData = new Uint8Array(analyser.frequencyBinCount);
+}
+
+function pulseLoop(){
+  if (!analyser) return;
+  analyser.getByteFrequencyData(freqData);
+  const bass = (freqData[0] + freqData[1] + freqData[2]) / 3 / 255;
+  const glowSize = 12 + bass * 46;
+  const glowAlpha = 0.18 + bass * 0.5;
+  el.platter.style.boxShadow =
+    `inset 0 0 0 1px #000, 0 10px 24px -8px rgba(0,0,0,.8), 0 0 ${glowSize}px ${glowSize / 2}px rgba(232,163,61,${glowAlpha})`;
+  pulseRAF = requestAnimationFrame(pulseLoop);
+}
+
+function stopPulse(){
+  if (pulseRAF) cancelAnimationFrame(pulseRAF);
+  el.platter.style.boxShadow = '';
+}
 /* ---------------- Init ---------------- */
 (async function init(){
   try {
