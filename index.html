@@ -108,28 +108,6 @@
     position:relative;
     height:200px;
     margin-bottom:14px;
-    overflow:hidden;
-    border-radius:18px;
-  }
-  .platter-bg-video{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    opacity:.42;
-    filter:blur(2px) brightness(.62) saturate(1.15);
-    transform:scale(1.04);
-    pointer-events:none;
-    z-index:0;
-  }
-  .platter-wrap::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:radial-gradient(circle at center, transparent 25%, rgba(20,17,15,.35) 100%);
-    pointer-events:none;
-    z-index:1;
   }
   .platter{
     width:180px; height:180px; border-radius:50%;
@@ -141,7 +119,6 @@
     animation-play-state: paused;
     transition: box-shadow .3s;
     position:relative;
-    z-index:2;
   }
   .platter.spinning{ animation-play-state: running; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
@@ -263,41 +240,24 @@
   }
 
   /* ---------- Equalizer ---------- */
-  .eq-card{
-    background:linear-gradient(180deg,#171b1f,#121518);
-    border:1px solid #2b3338;
-    border-radius:16px;
-    padding:14px 12px 12px;
-    margin-bottom:18px;
-    transition:opacity .2s, filter .2s;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.025), 0 12px 28px rgba(0,0,0,.22);
+  .eq-panel{
+    max-height:0;
+    overflow:hidden;
+    transition: max-height .3s ease, margin .3s ease;
+    margin-top:0;
   }
-  .eq-card.disabled{ opacity:.78; filter:saturate(.55); }
-  /* The power control must stay clickable when EQ is OFF. */
-  .eq-card.disabled .eq-bands,
-  .eq-card.disabled .eq-head-right{ opacity:.38; pointer-events:none; }
-  .eq-power{ cursor:pointer; user-select:none; }
-  .eq-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
-  .eq-power-box{ display:flex; flex-direction:column; align-items:flex-start; gap:5px; }
-  .eq-title{ font-size:10px; font-weight:700; color:#9ba7ad; letter-spacing:.08em; line-height:1; }
-  .eq-power{ display:flex; align-items:center; background:#101418; border:1px solid #273039; border-radius:6px; overflow:hidden; }
-  .eq-power span{ padding:4px 7px; font-size:9px; font-weight:700; color:#68737a; letter-spacing:.04em; }
-  .eq-power .on{ color:#57d2f2; background:#18313a; }
-  .eq-preset{ background:#20282d; border:1px solid #303a40; color:#9ba7ad; border-radius:6px; padding:5px 9px; font-size:9px; font-family:inherit; }
-  .eq-boost{ background:#18313a; border:1px solid #2d6675; color:#5ed5f5; border-radius:6px; padding:5px 8px; font-size:9px; font-weight:700; }
-  .eq-head-right{ display:flex; align-items:center; gap:6px; }
-  .eq-bands{ display:flex; align-items:flex-end; justify-content:space-between; gap:5px; min-height:190px; }
-  .eq-band{ width:31px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; min-width:0; }
-  .eq-band .eq-value{ font-size:8px; color:#647078; height:13px; line-height:13px; font-variant-numeric:tabular-nums; }
-  .eq-slider-wrap{ height:150px; width:30px; display:flex; align-items:center; justify-content:center; }
-  .eq-slider{ -webkit-appearance:none; appearance:none; width:190px; height:5px; border-radius:5px; background:#263036; outline:none; transform:rotate(-90deg); transform-origin:center; }
-  .eq-slider::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:15px; height:15px; border-radius:3px; background:#4fc4e5; border:1px solid #2b8fa9; box-shadow:0 2px 5px rgba(0,0,0,.45); cursor:pointer; }
-  .eq-slider::-moz-range-thumb{ width:15px; height:15px; border-radius:3px; background:#4fc4e5; border:1px solid #2b8fa9; box-shadow:0 2px 5px rgba(0,0,0,.45); cursor:pointer; }
-  .eq-slider::-moz-range-track{ height:5px; border-radius:5px; background:#263036; }
-  .eq-label{ margin-top:7px; color:#879198; font-size:7.5px; line-height:1.15; text-align:center; white-space:nowrap; }
-  .eq-zero{ position:absolute; width:1px; height:190px; background:rgba(255,255,255,.055); pointer-events:none; }
-  .eq-band-wide{ width:34px; }
-  @media (max-width:360px){ .eq-bands{ gap:2px; } .eq-band{ width:28px; } .eq-slider-wrap{ width:28px; } .eq-slider{ width:180px; } .eq-label{ font-size:7px; } }
+  .eq-panel.open{
+    max-height:160px;
+    margin-top:14px;
+  }
+  .eq-row{
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:10px;
+    font-size:12px; color:var(--muted);
+  }
+  .eq-row label{ width:60px; flex:none; }
+  .eq-row span{ width:26px; text-align:right; flex:none; font-variant-numeric: tabular-nums; }
+  .eq-row input[type=range]{ flex:1; }
 
   /* ---------- Playlist ---------- */
   .crate{ margin-top:26px; }
@@ -434,19 +394,42 @@
   .card-grid{
     display:grid;
     grid-template-columns:repeat(2,1fr);
-    gap:12px;
+    gap:14px;
   }
   .group-card{
     background:linear-gradient(180deg, var(--panel), var(--panel-2));
     border:1px solid var(--line);
-    border-radius:14px;
-    padding:16px 14px;
+    border-radius:16px;
+    padding:12px;
     cursor:pointer;
     transition:border-color .15s, transform .15s;
     text-align:left;
+    display:flex;
+    flex-direction:column;
+    -webkit-tap-highlight-color:transparent;
   }
-  .group-card:hover{ border-color:var(--amber-dim); }
-  .group-card:active{ transform:scale(.98); }
+  @media (hover:hover){
+    .group-card:hover{ border-color:var(--amber-dim); }
+  }
+  .group-card:active{ border-color:var(--amber-dim); transform:scale(.97); }
+
+  .group-art{
+    width:100%;
+    aspect-ratio:1/1;
+    border-radius:12px;
+    background:linear-gradient(135deg, var(--amber-dim), var(--amber));
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:10px; flex:none;
+    overflow:hidden;
+    position:relative;
+  }
+  .group-art::after{
+    content:"";
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 1px, transparent 1px 10px);
+  }
+  .group-art svg{ width:36%; height:36%; color:rgba(20,17,15,.55); position:relative; z-index:1; }
+
   .group-disc{
     width:44px;height:44px;border-radius:50%;
     background:linear-gradient(135deg, var(--amber-dim), var(--amber));
@@ -454,15 +437,24 @@
     color:var(--bg); font-family:'Fraunces',serif; font-weight:700; font-size:15px;
     margin-bottom:12px; flex:none;
   }
-  .group-name{ font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .group-count{ font-size:11px; color:var(--muted); margin-top:2px; }
+  .group-name{
+    font-size:13px; font-weight:600; line-height:1.32;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; word-break:break-word;
+    min-height:2.64em;
+  }
+  .group-count{ font-size:11px; color:var(--muted); margin-top:6px; }
 
   .artist-row{
     display:flex; align-items:center; gap:12px;
     padding:11px 12px; border-radius:12px; cursor:pointer;
     border:1px solid transparent;
+    -webkit-tap-highlight-color:transparent;
   }
-  .artist-row:hover{ background:var(--panel); border-color:var(--line); }
+  @media (hover:hover){
+    .artist-row:hover{ background:var(--panel); border-color:var(--line); }
+  }
+  .artist-row:active{ background:var(--panel); border-color:var(--line); }
   .artist-row .group-disc{ margin:0; width:38px;height:38px; font-size:13px; }
   .artist-row .meta{ flex:1; min-width:0; }
   .artist-row .meta .name{ font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -554,6 +546,14 @@
   }
   .switch.on .switch-knob{ transform:translateX(20px); }
 
+  .eq-card{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:16px;
+    margin-bottom:18px;
+    transition:opacity .2s;
+  }
+  .eq-card.disabled{ opacity:.4; pointer-events:none; }
+  .eq-card .eq-row:last-child{ margin-bottom:0; }
 
   .settings-stats{
     display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
@@ -645,9 +645,6 @@
       </div>
 
       <div class="platter-wrap">
-        <video class="platter-bg-video" autoplay muted loop playsinline preload="metadata">
-          <source src="rb.mp4" type="video/mp4">
-        </video>
         <div class="platter" id="platter">
           <div class="label"></div>
         </div>
@@ -802,64 +799,31 @@
       </div>
     </div>
 
-    <div class="eq-card" id="eqCard">
-      <div class="eq-head">
-        <div class="eq-power-box">
-          <div class="eq-title">EQUALIZER</div>
-          <div class="eq-power" id="eqPower" role="switch" aria-checked="true" title="Activer / désactiver l'égaliseur">
-            <span>OFF</span><span class="on">ON</span>
-          </div>
-        </div>
-        <div class="eq-head-right">
-          <select class="eq-preset" id="eqPreset" aria-label="Préréglage égaliseur">
-            <option value="normal">Normal</option>
-            <option value="bass">Bass</option>
-            <option value="vocal">Vocal</option>
-            <option value="rock">Rock</option>
-          </select>
-        </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-row-title">Égaliseur</div>
+        <div class="settings-row-sub">Activer les réglages de basses, médiums et aigus</div>
       </div>
-      <div class="eq-bands">
-        <div class="eq-band">
-          <div class="eq-value" id="eqBassVal">0</div>
-          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eqBass" min="-12" max="12" step="1" value="0" aria-label="Bass"></div>
-          <div class="eq-label">BASS</div>
-        </div>
-        <div class="eq-band">
-          <div class="eq-value" id="eq3dVal">0</div>
-          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eq3d" min="0" max="100" step="1" value="0" aria-label="3D"></div>
-          <div class="eq-label">3D</div>
-        </div>
-        <div class="eq-band">
-          <div class="eq-value" id="eq60Val">0</div>
-          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eq60" min="-12" max="12" step="1" value="0" aria-label="60 Hz"></div>
-          <div class="eq-label">60Hz</div>
-        </div>
-        <div class="eq-band">
-          <div class="eq-value" id="eq230Val">0</div>
-          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eq230" min="-12" max="12" step="1" value="0" aria-label="230 Hz"></div>
-          <div class="eq-label">230Hz</div>
-        </div>
-        <div class="eq-band">
-          <div class="eq-value" id="eq910Val">0</div>
-          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eq910" min="-12" max="12" step="1" value="0" aria-label="910 Hz"></div>
-          <div class="eq-label">910Hz</div>
-        </div>
-        <div class="eq-band">
-          <div class="eq-value" id="eq3600Val">0</div>
-          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eq3600" min="-12" max="12" step="1" value="0" aria-label="3.6 kHz"></div>
-          <div class="eq-label">3.6kHz</div>
-        </div>
-        <div class="eq-band">
-          <div class="eq-value" id="eq14kVal">0</div>
-          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eq14k" min="-12" max="12" step="1" value="0" aria-label="14 kHz"></div>
-          <div class="eq-label">14kHz</div>
-        </div>
-        <div class="eq-band eq-band-wide">
-          <div class="eq-value" id="eqVolVal">90</div>
-          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eqVol" min="0" max="1" step="0.01" value="0.9" aria-label="Volume"></div>
-          <div class="eq-label">VOL</div>
-        </div>
+      <button class="switch on" id="eqToggle" type="button" role="switch" aria-checked="true">
+        <span class="switch-knob"></span>
+      </button>
+    </div>
+
+    <div class="eq-card" id="eqCard">
+      <div class="eq-row">
+        <label>Basses</label>
+        <input type="range" id="eqBass" min="-15" max="15" step="1" value="0">
+        <span id="eqBassVal">0</span>
+      </div>
+      <div class="eq-row">
+        <label>Médiums</label>
+        <input type="range" id="eqMid" min="-15" max="15" step="1" value="0">
+        <span id="eqMidVal">0</span>
+      </div>
+      <div class="eq-row">
+        <label>Aigus</label>
+        <input type="range" id="eqTreble" min="-15" max="15" step="1" value="0">
+        <span id="eqTrebleVal">0</span>
       </div>
     </div>
 
@@ -1042,16 +1006,34 @@ function niceName(filename){
 }
 
 function initials(str){
-  const words = str.trim().split(/\s+/).filter(Boolean);
+  const cleaned = String(str || '').replace(/[^\p{L}\p{N}\s]/gu, '').trim();
+  const words = cleaned.split(/\s+/).filter(Boolean);
   if (!words.length) return '?';
   if (words.length === 1) return words[0].slice(0,2).toUpperCase();
   return (words[0][0] + words[1][0]).toUpperCase();
 }
 
+function sanitizeTag(str){
+  if (!str) return null;
+  const cleaned = String(str)
+    .replace(/[\u0000-\u001F\u007F\uFEFF]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned.length ? cleaned : null;
+}
+
+function normKey(str){
+  return String(str || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 /* ---- Metadata fallbacks ---- */
-function tTitle(t){ return t.title || niceName(t.name); }
-function tArtist(t){ return t.artist || 'Artiste inconnu'; }
-function tAlbum(t){ return t.album || 'Album inconnu'; }
+function tTitle(t){ return sanitizeTag(t.title) || niceName(t.name); }
+function tArtist(t){ return sanitizeTag(t.artist) || 'Artiste inconnu'; }
+function tAlbum(t){ return sanitizeTag(t.album) || 'Album inconnu'; }
 
 /* ---------------- Basic ID3v2 tag reader (title/artist/album) ---------------- */
 async function parseID3(file){
@@ -1143,7 +1125,7 @@ function renderList(){
 
   let base = playlist.map((t, i) => ({ t, i }));
   if (activeFilter){
-    base = base.filter(({ t }) => (activeFilter.type === 'album' ? tAlbum(t) : tArtist(t)) === activeFilter.value);
+    base = base.filter(({ t }) => normKey(activeFilter.type === 'album' ? tAlbum(t) : tArtist(t)) === activeFilter.value);
   }
 
   const query = (el.searchInput ? el.searchInput.value : '').trim().toLowerCase();
@@ -1172,8 +1154,8 @@ function renderList(){
       <span class="track-num">${i === currentIndex ? '' : String(i + 1).padStart(2, '0')}</span>
       ${i === currentIndex ? '<div class="eq"><span></span><span></span><span></span></div>' : ''}
       <div class="track-meta">
-        <div class="name">${tTitle(t)}</div>
-        <div class="size">${tArtist(t)} · ${(t.size / (1024*1024)).toFixed(1)} Mo</div>
+        <div class="name">${escapeHtml(tTitle(t))}</div>
+        <div class="size">${escapeHtml(tArtist(t))} · ${(t.size / (1024*1024)).toFixed(1)} Mo</div>
       </div>
       <div class="track-actions">
         <button class="track-add" data-id="${t.id}" title="Ajouter à une playlist">
@@ -1267,56 +1249,34 @@ function step(delta){
 
 /* ---------------- Audio-reactive glow + Equalizer ---------------- */
 let audioCtx, analyser, audioSource, freqData, pulseRAF;
-let eqFilters = [];
-let spatialSplitter, spatialMerger, leftMainGain, rightMainGain, crossLeftGain, crossRightGain;
+let bassFilter, midFilter, trebleFilter;
 
 function setupAnalyser(){
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   audioSource = audioCtx.createMediaElementSource(audio);
 
-  const bands = [
-    { id:'eqBass', freq:120, type:'lowshelf' },
-    { id:'eq60', freq:60, type:'peaking', q:1.0 },
-    { id:'eq230', freq:230, type:'peaking', q:1.0 },
-    { id:'eq910', freq:910, type:'peaking', q:0.9 },
-    { id:'eq3600', freq:3600, type:'peaking', q:0.9 },
-    { id:'eq14k', freq:14000, type:'highshelf' }
-  ];
+  bassFilter = audioCtx.createBiquadFilter();
+  bassFilter.type = 'lowshelf';
+  bassFilter.frequency.value = 200;
 
-  eqFilters = bands.map(b => {
-    const f = audioCtx.createBiquadFilter();
-    f.type = b.type;
-    f.frequency.value = b.freq;
-    if (b.q) f.Q.value = b.q;
-    return f;
-  });
+  midFilter = audioCtx.createBiquadFilter();
+  midFilter.type = 'peaking';
+  midFilter.frequency.value = 1000;
+  midFilter.Q.value = 1;
+
+  trebleFilter = audioCtx.createBiquadFilter();
+  trebleFilter.type = 'highshelf';
+  trebleFilter.frequency.value = 3000;
 
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 64;
   freqData = new Uint8Array(analyser.frequencyBinCount);
 
-  audioSource.connect(eqFilters[0]);
-  for (let i = 0; i < eqFilters.length - 1; i++) eqFilters[i].connect(eqFilters[i + 1]);
-
-  /* Simple stereo-width processor used by the 3D slider. */
-  spatialSplitter = audioCtx.createChannelSplitter(2);
-  spatialMerger = audioCtx.createChannelMerger(2);
-  leftMainGain = audioCtx.createGain();
-  rightMainGain = audioCtx.createGain();
-  crossLeftGain = audioCtx.createGain();
-  crossRightGain = audioCtx.createGain();
-
-  eqFilters[eqFilters.length - 1].connect(spatialSplitter);
-  spatialSplitter.connect(leftMainGain, 0);
-  spatialSplitter.connect(rightMainGain, 1);
-  spatialSplitter.connect(crossLeftGain, 1);
-  spatialSplitter.connect(crossRightGain, 0);
-  leftMainGain.connect(spatialMerger, 0, 0);
-  rightMainGain.connect(spatialMerger, 0, 1);
-  crossLeftGain.connect(spatialMerger, 0, 0);
-  crossRightGain.connect(spatialMerger, 0, 1);
-  spatialMerger.connect(analyser);
+  audioSource.connect(bassFilter);
+  bassFilter.connect(midFilter);
+  midFilter.connect(trebleFilter);
+  trebleFilter.connect(analyser);
   analyser.connect(audioCtx.destination);
 
   applyEQGains();
@@ -1338,99 +1298,48 @@ function stopPulse(){
   el.platter.style.boxShadow = '';
 }
 
-/* ---- Graphic Equalizer ---- */
+/* ---- EQ controls (now living in Paramètres) ---- */
+const eqToggle = document.getElementById('eqToggle');
 const eqCard = document.getElementById('eqCard');
-const eqPower = document.getElementById('eqPower');
 const eqBass = document.getElementById('eqBass');
-const eq3d = document.getElementById('eq3d');
-const eq60 = document.getElementById('eq60');
-const eq230 = document.getElementById('eq230');
-const eq910 = document.getElementById('eq910');
-const eq3600 = document.getElementById('eq3600');
-const eq14k = document.getElementById('eq14k');
-const eqVol = document.getElementById('eqVol');
-const eqPreset = document.getElementById('eqPreset');
+const eqMid = document.getElementById('eqMid');
+const eqTreble = document.getElementById('eqTreble');
+const eqBassVal = document.getElementById('eqBassVal');
+const eqMidVal = document.getElementById('eqMidVal');
+const eqTrebleVal = document.getElementById('eqTrebleVal');
 let eqEnabled = true;
-let boostEnabled = false;
-
-function setEqValue(id, value, suffix=''){
-  const out = document.getElementById(id);
-  if (out) out.textContent = String(value) + suffix;
-}
-
-function apply3D(){
-  if (!leftMainGain) return;
-  /* When EQ is OFF, 3D must also be bypassed. */
-  const width = eqEnabled ? (Number(eq3d.value) / 100 * 0.5) : 0;
-  leftMainGain.gain.value = 1 + width;
-  rightMainGain.gain.value = 1 + width;
-  crossLeftGain.gain.value = -width;
-  crossRightGain.gain.value = -width;
-}
 
 function applyEQGains(){
-  if (eqFilters.length){
-    const values = [eqBass, eq60, eq230, eq910, eq3600, eq14k];
-    eqFilters.forEach((filter, i) => {
-      filter.gain.value = eqEnabled ? Number(values[i].value) + (boostEnabled && i === 0 ? 3 : 0) : 0;
-    });
-  }
-  apply3D();
+  if (bassFilter) bassFilter.gain.value = eqEnabled ? Number(eqBass.value) : 0;
+  if (midFilter) midFilter.gain.value = eqEnabled ? Number(eqMid.value) : 0;
+  if (trebleFilter) trebleFilter.gain.value = eqEnabled ? Number(eqTreble.value) : 0;
 }
 
 function updateEqUI(){
-  eqPower.setAttribute('aria-checked', String(eqEnabled));
-  eqPower.innerHTML = `<span class="${eqEnabled ? '' : 'on'}">OFF</span><span class="${eqEnabled ? 'on' : ''}">ON</span>`;
+  eqToggle.classList.toggle('on', eqEnabled);
+  eqToggle.setAttribute('aria-checked', String(eqEnabled));
   eqCard.classList.toggle('disabled', !eqEnabled);
   applyEQGains();
 }
 
-function updateEqValues(){
-  setEqValue('eqBassVal', eqBass.value);
-  setEqValue('eq3dVal', eq3d.value);
-  setEqValue('eq60Val', eq60.value);
-  setEqValue('eq230Val', eq230.value);
-  setEqValue('eq910Val', eq910.value);
-  setEqValue('eq3600Val', eq3600.value);
-  setEqValue('eq14kVal', eq14k.value);
-  setEqValue('eqVolVal', Math.round(Number(eqVol.value) * 100));
-}
-
-[eqBass, eq60, eq230, eq910, eq3600, eq14k].forEach(input => {
-  input.addEventListener('input', () => { updateEqValues(); applyEQGains(); });
-});
-eq3d.addEventListener('input', () => { updateEqValues(); apply3D(); });
-eqVol.addEventListener('input', () => {
-  audio.volume = Number(eqVol.value);
-  el.volume.value = eqVol.value;
-  updateEqValues();
-});
-
-eqPower.addEventListener('click', () => {
+eqToggle.addEventListener('click', () => {
   eqEnabled = !eqEnabled;
   updateEqUI();
 });
-eqPower.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    eqEnabled = !eqEnabled;
-    updateEqUI();
-  }
+
+eqBass.addEventListener('input', () => {
+  eqBassVal.textContent = eqBass.value;
+  applyEQGains();
 });
-eqPreset.addEventListener('change', () => {
-  const presets = {
-    normal: [0,0,0,0,0,0],
-    bass: [7,5,3,0,-1,-1],
-    vocal: [0,-1,1,4,4,2],
-    rock: [5,3,-1,2,5,6]
-  };
-  const values = presets[eqPreset.value] || presets.normal;
-  [eqBass,eq60,eq230,eq910,eq3600,eq14k].forEach((input,i) => input.value = values[i]);
-  updateEqValues();
+eqMid.addEventListener('input', () => {
+  eqMidVal.textContent = eqMid.value;
+  applyEQGains();
+});
+eqTreble.addEventListener('input', () => {
+  eqTrebleVal.textContent = eqTreble.value;
   applyEQGains();
 });
 
-updateEqValues();
 updateEqUI();
 
 /* ---------------- Events ---------------- */
@@ -1470,9 +1379,8 @@ el.repeatBtn.addEventListener('click', () => {
   repeat = !repeat;
   el.repeatBtn.classList.toggle('active', repeat);
 });
-el.volume.addEventListener('input', () => { audio.volume = el.volume.value; eqVol.value = el.volume.value; updateEqValues(); });
+el.volume.addEventListener('input', () => { audio.volume = el.volume.value; });
 audio.volume = el.volume.value;
-eqVol.value = el.volume.value;
 
 el.groove.addEventListener('click', (e) => {
   if (!audio.duration) return;
@@ -1492,9 +1400,9 @@ el.fileInput.addEventListener('change', async (e) => {
       tags = await parseID3(f);
     }
     const guess = guessFromFilename(f.name);
-    const title = (tags && tags.title) || guess.title || niceName(f.name);
-    const artist = (tags && tags.artist) || guess.artist || null;
-    const album = (tags && tags.album) || null;
+    const title = sanitizeTag(tags && tags.title) || sanitizeTag(guess.title) || niceName(f.name);
+    const artist = sanitizeTag(tags && tags.artist) || sanitizeTag(guess.artist) || null;
+    const album = sanitizeTag(tags && tags.album) || null;
     const id = await dbAdd({ name: f.name, size: f.size, type: f.type, blob: f, title, artist, album });
     playlist.push({ id, name: f.name, size: f.size, blob: f, title, artist, album });
   }
@@ -1514,14 +1422,17 @@ el.fileInput.addEventListener('change', async (e) => {
 
 /* ---------------- Albums ---------------- */
 function getGroups(keyFn){
-  const map = new Map();
+  const map = new Map(); // normalized key -> { label, idxs }
   playlist.forEach((t, i) => {
-    const key = keyFn(t);
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(i);
+    const raw = keyFn(t);
+    const key = normKey(raw);
+    if (!map.has(key)) map.set(key, { label: raw, idxs: [] });
+    map.get(key).idxs.push(i);
   });
   return map;
 }
+
+const ICON_ALBUM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg>';
 
 function renderAlbums(){
   const grid = document.getElementById('albumGrid');
@@ -1534,16 +1445,17 @@ function renderAlbums(){
     return;
   }
   empty.style.display = 'none';
-  [...groups.entries()].sort((a,b) => a[0].localeCompare(b[0])).forEach(([name, idxs]) => {
+  [...groups.entries()].sort((a,b) => a[1].label.localeCompare(b[1].label)).forEach(([key, group]) => {
+    const { label, idxs } = group;
     const card = document.createElement('button');
     card.className = 'group-card';
     card.innerHTML = `
-      <div class="group-disc">${initials(name)}</div>
-      <div class="group-name">${name}</div>
+      <div class="group-art">${ICON_ALBUM}</div>
+      <div class="group-name">${escapeHtml(label)}</div>
       <div class="group-count">${idxs.length} ${idxs.length === 1 ? 'morceau' : 'morceaux'}</div>
     `;
     card.addEventListener('click', () => {
-      activeFilter = { type: 'album', value: name, label: 'Album : ' + name };
+      activeFilter = { type: 'album', value: key, label: 'Album : ' + label };
       switchView('view-songs');
     });
     grid.appendChild(card);
@@ -1562,19 +1474,20 @@ function renderArtists(){
     return;
   }
   empty.style.display = 'none';
-  [...groups.entries()].sort((a,b) => a[0].localeCompare(b[0])).forEach(([name, idxs]) => {
+  [...groups.entries()].sort((a,b) => a[1].label.localeCompare(b[1].label)).forEach(([key, group]) => {
+    const { label, idxs } = group;
     const li = document.createElement('li');
     li.className = 'artist-row';
     li.innerHTML = `
-      <div class="group-disc">${initials(name)}</div>
+      <div class="group-disc">${initials(label)}</div>
       <div class="meta">
-        <div class="name">${name}</div>
+        <div class="name">${escapeHtml(label)}</div>
         <div class="count">${idxs.length} ${idxs.length === 1 ? 'morceau' : 'morceaux'}</div>
       </div>
       <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     `;
     li.addEventListener('click', () => {
-      activeFilter = { type: 'artist', value: name, label: 'Artiste : ' + name };
+      activeFilter = { type: 'artist', value: key, label: 'Artiste : ' + label };
       switchView('view-songs');
     });
     list.appendChild(li);
@@ -1608,7 +1521,7 @@ function renderPlaylists(){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="15" y2="18"/></svg>
       </span>
       <div class="track-meta">
-        <div class="name">${p.name}</div>
+        <div class="name">${escapeHtml(p.name)}</div>
         <div class="size">${p.trackIds.length} ${p.trackIds.length === 1 ? 'morceau' : 'morceaux'}</div>
       </div>
       <button class="track-del" data-id="${p.id}" title="Supprimer la playlist">
@@ -1666,8 +1579,8 @@ function renderPlaylistDetail(playlistId){
       <span class="track-num">${idx === currentIndex ? '' : String(pos + 1).padStart(2, '0')}</span>
       ${idx === currentIndex ? '<div class="eq"><span></span><span></span><span></span></div>' : ''}
       <div class="track-meta">
-        <div class="name">${tTitle(t)}</div>
-        <div class="size">${tArtist(t)}</div>
+        <div class="name">${escapeHtml(tTitle(t))}</div>
+        <div class="size">${escapeHtml(tArtist(t))}</div>
       </div>
       <button class="track-del" data-id="${t.id}" title="Retirer de la playlist">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1703,7 +1616,7 @@ function openAddToPlaylistModal(trackId){
       const checked = p.trackIds.includes(trackId);
       return `<li class="modal-row${checked ? ' checked' : ''}" data-pid="${p.id}">
         ${ICON_CHECK}
-        <span class="modal-row-name">${p.name}</span>
+        <span class="modal-row-name">${escapeHtml(p.name)}</span>
       </li>`;
     }).join('');
     return `
@@ -1753,7 +1666,7 @@ function openAddTracksModal(playlistId){
       const checked = p.trackIds.includes(t.id);
       return `<li class="modal-row${checked ? ' checked' : ''}" data-tid="${t.id}">
         ${ICON_CHECK}
-        <span class="modal-row-name">${tTitle(t)} — ${tArtist(t)}</span>
+        <span class="modal-row-name">${escapeHtml(tTitle(t))} — ${escapeHtml(tArtist(t))}</span>
       </li>`;
     }).join('');
     return `
