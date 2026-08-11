@@ -239,26 +239,6 @@
     box-shadow:0 1px 4px rgba(0,0,0,.5);
   }
 
-  /* ---------- Equalizer ---------- */
-  .eq-panel{
-    max-height:0;
-    overflow:hidden;
-    transition: max-height .3s ease, margin .3s ease;
-    margin-top:0;
-  }
-  .eq-panel.open{
-    max-height:160px;
-    margin-top:14px;
-  }
-  .eq-row{
-    display:flex; align-items:center; gap:10px;
-    margin-bottom:10px;
-    font-size:12px; color:var(--muted);
-  }
-  .eq-row label{ width:60px; flex:none; }
-  .eq-row span{ width:26px; text-align:right; flex:none; font-variant-numeric: tabular-nums; }
-  .eq-row input[type=range]{ flex:1; }
-
   /* ---------- Playlist ---------- */
   .crate{ margin-top:26px; }
   .crate-head{
@@ -520,41 +500,126 @@
   }
 
   /* ---------- Settings ---------- */
-  .settings-row{
-    display:flex; align-items:center; justify-content:space-between;
-    gap:14px;
+  .eq-card{
     background:var(--panel); border:1px solid var(--line);
-    border-radius:14px; padding:14px 16px;
-    margin-bottom:10px;
+    border-radius:16px; padding:16px;
+    margin-bottom:18px;
   }
-  .settings-row-title{ font-size:13.5px; font-weight:600; }
-  .settings-row-sub{ font-size:11.5px; color:var(--muted); margin-top:3px; line-height:1.4; }
+  .eq-topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .eq-topbar-title{
+    font-family:'Fraunces', serif;
+    font-weight:600; font-size:14.5px;
+  }
+  .eq-topbar-spacer{ width:66px; flex:none; }
 
   .switch{
-    width:46px; height:26px; border-radius:26px;
+    width:66px; height:28px; border-radius:8px;
     background:var(--groove);
     border:none; position:relative; cursor:pointer;
     padding:0; flex:none;
-    transition:background .2s;
   }
-  .switch.on{ background:var(--amber); }
-  .switch-knob{
+  .switch-highlight{
     position:absolute; top:3px; left:3px;
-    width:20px; height:20px; border-radius:50%;
-    background:var(--cream);
-    transition:transform .2s;
-    box-shadow:0 1px 3px rgba(0,0,0,.4);
+    width:30px; height:22px; border-radius:6px;
+    background:var(--panel-2);
+    transition:transform .2s, background .2s;
   }
-  .switch.on .switch-knob{ transform:translateX(20px); }
+  .switch.on .switch-highlight{
+    transform:translateX(30px);
+    background:var(--amber);
+  }
+  .switch-labels{ position:absolute; inset:0; display:flex; }
+  .switch-label{
+    flex:1; position:relative; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+    font-size:9.5px; font-weight:700; letter-spacing:.03em;
+    color:var(--muted);
+  }
+  .switch:not(.on) .switch-label.off-label{ color:var(--cream); }
+  .switch.on .switch-label.on-label{ color:var(--bg); }
 
-  .eq-card{
-    background:var(--panel); border:1px solid var(--line);
-    border-radius:14px; padding:16px;
+  .eq-body{ transition:opacity .2s; }
+  .eq-body.disabled{ opacity:.4; pointer-events:none; }
+
+  .eq-preset-row{
+    display:flex; justify-content:flex-end;
     margin-bottom:18px;
-    transition:opacity .2s;
   }
-  .eq-card.disabled{ opacity:.4; pointer-events:none; }
-  .eq-card .eq-row:last-child{ margin-bottom:0; }
+  select.eq-preset{
+    -webkit-appearance:none; appearance:none;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--amber);
+    font-family:inherit; font-size:12px; font-weight:600;
+    padding:7px 28px 7px 14px;
+    border-radius:20px;
+    cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E8A33D' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 9px center;
+    background-size:12px;
+  }
+
+  .eq-faders{
+    display:flex; justify-content:space-around; align-items:flex-end;
+    gap:8px;
+  }
+  .fader-wrap{
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .fader-val{
+    font-size:10.5px; color:var(--muted); font-variant-numeric: tabular-nums;
+    min-height:13px;
+  }
+  .fader-track{
+    position:relative;
+    width:36px; height:170px;
+    background:var(--groove);
+    border-radius:7px;
+    overflow:hidden;
+  }
+  .fader-fill{
+    position:absolute; left:0; right:0; bottom:0;
+    height:50%;
+    background:linear-gradient(180deg, var(--amber), var(--amber-dim));
+  }
+  .fader-track input[type=range]{
+    position:absolute;
+    top:50%; left:50%;
+    width:170px; height:36px;
+    margin:0; padding:0;
+    transform:translate(-50%,-50%) rotate(-90deg);
+    -webkit-appearance:none; appearance:none;
+    background:transparent;
+    cursor:pointer;
+  }
+  .fader-track input[type=range]::-webkit-slider-runnable-track{ background:transparent; }
+  .fader-track input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:10px; height:32px;
+    border-radius:3px;
+    background:var(--cream);
+    border:1px solid var(--line);
+    box-shadow:0 2px 5px rgba(0,0,0,.5);
+    cursor:pointer;
+    position:relative;
+  }
+  .fader-track input[type=range]::-moz-range-track{ background:transparent; }
+  .fader-track input[type=range]::-moz-range-thumb{
+    width:10px; height:32px;
+    border-radius:3px;
+    background:var(--cream);
+    border:1px solid var(--line);
+    box-shadow:0 2px 5px rgba(0,0,0,.5);
+    cursor:pointer;
+  }
+  .fader-label{
+    font-size:10.5px; color:var(--muted);
+    letter-spacing:.02em;
+  }
 
   .settings-stats{
     display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
@@ -800,31 +865,55 @@
       </div>
     </div>
 
-    <div class="settings-row">
-      <div>
-        <div class="settings-row-title">Égaliseur</div>
-        <div class="settings-row-sub">Activer les réglages de basses, médiums et aigus</div>
+    <div class="eq-card">
+      <div class="eq-topbar">
+        <button class="switch on" id="eqToggle" type="button" role="switch" aria-checked="true">
+          <span class="switch-highlight"></span>
+          <span class="switch-labels">
+            <span class="switch-label off-label">OFF</span>
+            <span class="switch-label on-label">ON</span>
+          </span>
+        </button>
+        <span class="eq-topbar-title">Égaliseur</span>
+        <span class="eq-topbar-spacer"></span>
       </div>
-      <button class="switch on" id="eqToggle" type="button" role="switch" aria-checked="true">
-        <span class="switch-knob"></span>
-      </button>
-    </div>
 
-    <div class="eq-card" id="eqCard">
-      <div class="eq-row">
-        <label>Basses</label>
-        <input type="range" id="eqBass" min="-15" max="15" step="1" value="0">
-        <span id="eqBassVal">0</span>
-      </div>
-      <div class="eq-row">
-        <label>Médiums</label>
-        <input type="range" id="eqMid" min="-15" max="15" step="1" value="0">
-        <span id="eqMidVal">0</span>
-      </div>
-      <div class="eq-row">
-        <label>Aigus</label>
-        <input type="range" id="eqTreble" min="-15" max="15" step="1" value="0">
-        <span id="eqTrebleVal">0</span>
+      <div class="eq-body" id="eqBody">
+        <div class="eq-preset-row">
+          <select class="eq-preset" id="eqPreset">
+            <option value="normal">Normal</option>
+            <option value="bass">Basses +</option>
+            <option value="treble">Aigus +</option>
+            <option value="vocal">Voix</option>
+          </select>
+        </div>
+
+        <div class="eq-faders">
+          <div class="fader-wrap">
+            <span class="fader-val" id="eqBassVal">0</span>
+            <div class="fader-track">
+              <div class="fader-fill" id="eqBassFill"></div>
+              <input type="range" id="eqBass" min="-15" max="15" step="1" value="0">
+            </div>
+            <span class="fader-label">Basses</span>
+          </div>
+          <div class="fader-wrap">
+            <span class="fader-val" id="eqMidVal">0</span>
+            <div class="fader-track">
+              <div class="fader-fill" id="eqMidFill"></div>
+              <input type="range" id="eqMid" min="-15" max="15" step="1" value="0">
+            </div>
+            <span class="fader-label">Médiums</span>
+          </div>
+          <div class="fader-wrap">
+            <span class="fader-val" id="eqTrebleVal">0</span>
+            <div class="fader-track">
+              <div class="fader-fill" id="eqTrebleFill"></div>
+              <input type="range" id="eqTreble" min="-15" max="15" step="1" value="0">
+            </div>
+            <span class="fader-label">Aigus</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1299,16 +1388,34 @@ function stopPulse(){
   el.platter.style.boxShadow = '';
 }
 
-/* ---- EQ controls (now living in Paramètres) ---- */
+/* ---- EQ controls (fader-style, now living in Paramètres) ---- */
 const eqToggle = document.getElementById('eqToggle');
-const eqCard = document.getElementById('eqCard');
+const eqBody = document.getElementById('eqBody');
+const eqPreset = document.getElementById('eqPreset');
 const eqBass = document.getElementById('eqBass');
 const eqMid = document.getElementById('eqMid');
 const eqTreble = document.getElementById('eqTreble');
 const eqBassVal = document.getElementById('eqBassVal');
 const eqMidVal = document.getElementById('eqMidVal');
 const eqTrebleVal = document.getElementById('eqTrebleVal');
+const eqBassFill = document.getElementById('eqBassFill');
+const eqMidFill = document.getElementById('eqMidFill');
+const eqTrebleFill = document.getElementById('eqTrebleFill');
 let eqEnabled = true;
+
+const EQ_PRESETS = {
+  normal: { bass: 0, mid: 0, treble: 0 },
+  bass:   { bass: 8, mid: 0, treble: 0 },
+  treble: { bass: 0, mid: 0, treble: 8 },
+  vocal:  { bass: -3, mid: 6, treble: 2 },
+};
+
+function syncFader(input, valEl, fillEl){
+  valEl.textContent = input.value;
+  const min = Number(input.min), max = Number(input.max);
+  const pct = (Number(input.value) - min) / (max - min);
+  fillEl.style.height = (pct * 100) + '%';
+}
 
 function applyEQGains(){
   if (bassFilter) bassFilter.gain.value = eqEnabled ? Number(eqBass.value) : 0;
@@ -1319,7 +1426,7 @@ function applyEQGains(){
 function updateEqUI(){
   eqToggle.classList.toggle('on', eqEnabled);
   eqToggle.setAttribute('aria-checked', String(eqEnabled));
-  eqCard.classList.toggle('disabled', !eqEnabled);
+  eqBody.classList.toggle('disabled', !eqEnabled);
   applyEQGains();
 }
 
@@ -1329,18 +1436,35 @@ eqToggle.addEventListener('click', () => {
 });
 
 eqBass.addEventListener('input', () => {
-  eqBassVal.textContent = eqBass.value;
+  syncFader(eqBass, eqBassVal, eqBassFill);
+  eqPreset.value = 'normal';
   applyEQGains();
 });
 eqMid.addEventListener('input', () => {
-  eqMidVal.textContent = eqMid.value;
+  syncFader(eqMid, eqMidVal, eqMidFill);
+  eqPreset.value = 'normal';
   applyEQGains();
 });
 eqTreble.addEventListener('input', () => {
-  eqTrebleVal.textContent = eqTreble.value;
+  syncFader(eqTreble, eqTrebleVal, eqTrebleFill);
+  eqPreset.value = 'normal';
   applyEQGains();
 });
 
+eqPreset.addEventListener('change', () => {
+  const p = EQ_PRESETS[eqPreset.value] || EQ_PRESETS.normal;
+  eqBass.value = p.bass;
+  eqMid.value = p.mid;
+  eqTreble.value = p.treble;
+  syncFader(eqBass, eqBassVal, eqBassFill);
+  syncFader(eqMid, eqMidVal, eqMidFill);
+  syncFader(eqTreble, eqTrebleVal, eqTrebleFill);
+  applyEQGains();
+});
+
+syncFader(eqBass, eqBassVal, eqBassFill);
+syncFader(eqMid, eqMidVal, eqMidFill);
+syncFader(eqTreble, eqTrebleVal, eqTrebleFill);
 updateEqUI();
 
 /* ---------------- Events ---------------- */
