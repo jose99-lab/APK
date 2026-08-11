@@ -108,6 +108,28 @@
     position:relative;
     height:200px;
     margin-bottom:14px;
+    overflow:hidden;
+    border-radius:18px;
+  }
+  .platter-bg-video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    opacity:.42;
+    filter:blur(2px) brightness(.62) saturate(1.15);
+    transform:scale(1.04);
+    pointer-events:none;
+    z-index:0;
+  }
+  .platter-wrap::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at center, transparent 25%, rgba(20,17,15,.35) 100%);
+    pointer-events:none;
+    z-index:1;
   }
   .platter{
     width:180px; height:180px; border-radius:50%;
@@ -119,6 +141,7 @@
     animation-play-state: paused;
     transition: box-shadow .3s;
     position:relative;
+    z-index:2;
   }
   .platter.spinning{ animation-play-state: running; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
@@ -622,6 +645,9 @@
       </div>
 
       <div class="platter-wrap">
+        <video class="platter-bg-video" autoplay muted loop playsinline preload="metadata">
+          <source src="rb.mp4" type="video/mp4">
+        </video>
         <div class="platter" id="platter">
           <div class="label"></div>
         </div>
