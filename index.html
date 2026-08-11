@@ -240,24 +240,35 @@
   }
 
   /* ---------- Equalizer ---------- */
-  .eq-panel{
-    max-height:0;
-    overflow:hidden;
-    transition: max-height .3s ease, margin .3s ease;
-    margin-top:0;
+  .eq-card{
+    background:linear-gradient(180deg,#171b1f,#121518);
+    border:1px solid #2b3338;
+    border-radius:16px;
+    padding:14px 12px 12px;
+    margin-bottom:18px;
+    transition:opacity .2s, filter .2s;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.025), 0 12px 28px rgba(0,0,0,.22);
   }
-  .eq-panel.open{
-    max-height:160px;
-    margin-top:14px;
-  }
-  .eq-row{
-    display:flex; align-items:center; gap:10px;
-    margin-bottom:10px;
-    font-size:12px; color:var(--muted);
-  }
-  .eq-row label{ width:60px; flex:none; }
-  .eq-row span{ width:26px; text-align:right; flex:none; font-variant-numeric: tabular-nums; }
-  .eq-row input[type=range]{ flex:1; }
+  .eq-card.disabled{ opacity:.4; pointer-events:none; }
+  .eq-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
+  .eq-power{ display:flex; align-items:center; background:#101418; border:1px solid #273039; border-radius:6px; overflow:hidden; }
+  .eq-power span{ padding:4px 7px; font-size:9px; font-weight:700; color:#68737a; letter-spacing:.04em; }
+  .eq-power .on{ color:#57d2f2; background:#18313a; }
+  .eq-preset{ background:#20282d; border:1px solid #303a40; color:#9ba7ad; border-radius:6px; padding:5px 9px; font-size:9px; font-family:inherit; }
+  .eq-boost{ background:#18313a; border:1px solid #2d6675; color:#5ed5f5; border-radius:6px; padding:5px 8px; font-size:9px; font-weight:700; }
+  .eq-head-right{ display:flex; align-items:center; gap:6px; }
+  .eq-bands{ display:flex; align-items:flex-end; justify-content:space-between; gap:5px; min-height:190px; }
+  .eq-band{ width:31px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; min-width:0; }
+  .eq-band .eq-value{ font-size:8px; color:#647078; height:13px; line-height:13px; font-variant-numeric:tabular-nums; }
+  .eq-slider-wrap{ height:150px; width:30px; display:flex; align-items:center; justify-content:center; }
+  .eq-slider{ -webkit-appearance:none; appearance:none; width:145px; height:5px; border-radius:5px; background:#263036; outline:none; transform:rotate(-90deg); transform-origin:center; }
+  .eq-slider::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:15px; height:15px; border-radius:3px; background:#4fc4e5; border:1px solid #2b8fa9; box-shadow:0 2px 5px rgba(0,0,0,.45); cursor:pointer; }
+  .eq-slider::-moz-range-thumb{ width:15px; height:15px; border-radius:3px; background:#4fc4e5; border:1px solid #2b8fa9; box-shadow:0 2px 5px rgba(0,0,0,.45); cursor:pointer; }
+  .eq-slider::-moz-range-track{ height:5px; border-radius:5px; background:#263036; }
+  .eq-label{ margin-top:7px; color:#879198; font-size:7.5px; line-height:1.15; text-align:center; white-space:nowrap; }
+  .eq-zero{ position:absolute; width:1px; height:145px; background:rgba(255,255,255,.055); pointer-events:none; }
+  .eq-band-wide{ width:34px; }
+  @media (max-width:360px){ .eq-bands{ gap:2px; } .eq-band{ width:28px; } .eq-slider-wrap{ width:28px; } .eq-slider{ width:135px; } .eq-label{ font-size:7px; } }
 
   /* ---------- Playlist ---------- */
   .crate{ margin-top:26px; }
@@ -514,14 +525,6 @@
   }
   .switch.on .switch-knob{ transform:translateX(20px); }
 
-  .eq-card{
-    background:var(--panel); border:1px solid var(--line);
-    border-radius:14px; padding:16px;
-    margin-bottom:18px;
-    transition:opacity .2s;
-  }
-  .eq-card.disabled{ opacity:.4; pointer-events:none; }
-  .eq-card .eq-row:last-child{ margin-bottom:0; }
 
   .settings-stats{
     display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
@@ -767,31 +770,62 @@
       </div>
     </div>
 
-    <div class="settings-row">
-      <div>
-        <div class="settings-row-title">Égaliseur</div>
-        <div class="settings-row-sub">Activer les réglages de basses, médiums et aigus</div>
-      </div>
-      <button class="switch on" id="eqToggle" type="button" role="switch" aria-checked="true">
-        <span class="switch-knob"></span>
-      </button>
-    </div>
-
     <div class="eq-card" id="eqCard">
-      <div class="eq-row">
-        <label>Basses</label>
-        <input type="range" id="eqBass" min="-15" max="15" step="1" value="0">
-        <span id="eqBassVal">0</span>
+      <div class="eq-head">
+        <div class="eq-power" id="eqPower" role="switch" aria-checked="true" title="Activer / désactiver l'égaliseur">
+          <span>OFF</span><span class="on">ON</span>
+        </div>
+        <div class="eq-head-right">
+          <select class="eq-preset" id="eqPreset" aria-label="Préréglage égaliseur">
+            <option value="normal">Normal</option>
+            <option value="bass">Bass</option>
+            <option value="vocal">Vocal</option>
+            <option value="rock">Rock</option>
+          </select>
+          <button class="eq-boost" id="eqBoost" type="button">Boost</button>
+        </div>
       </div>
-      <div class="eq-row">
-        <label>Médiums</label>
-        <input type="range" id="eqMid" min="-15" max="15" step="1" value="0">
-        <span id="eqMidVal">0</span>
-      </div>
-      <div class="eq-row">
-        <label>Aigus</label>
-        <input type="range" id="eqTreble" min="-15" max="15" step="1" value="0">
-        <span id="eqTrebleVal">0</span>
+      <div class="eq-bands">
+        <div class="eq-band">
+          <div class="eq-value" id="eqBassVal">0</div>
+          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eqBass" min="-12" max="12" step="1" value="0" aria-label="Bass"></div>
+          <div class="eq-label">BASS</div>
+        </div>
+        <div class="eq-band">
+          <div class="eq-value" id="eq3dVal">0</div>
+          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eq3d" min="0" max="100" step="1" value="0" aria-label="3D"></div>
+          <div class="eq-label">3D</div>
+        </div>
+        <div class="eq-band">
+          <div class="eq-value" id="eq60Val">0</div>
+          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eq60" min="-12" max="12" step="1" value="0" aria-label="60 Hz"></div>
+          <div class="eq-label">60Hz</div>
+        </div>
+        <div class="eq-band">
+          <div class="eq-value" id="eq230Val">0</div>
+          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eq230" min="-12" max="12" step="1" value="0" aria-label="230 Hz"></div>
+          <div class="eq-label">230Hz</div>
+        </div>
+        <div class="eq-band">
+          <div class="eq-value" id="eq910Val">0</div>
+          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eq910" min="-12" max="12" step="1" value="0" aria-label="910 Hz"></div>
+          <div class="eq-label">910Hz</div>
+        </div>
+        <div class="eq-band">
+          <div class="eq-value" id="eq3600Val">0</div>
+          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eq3600" min="-12" max="12" step="1" value="0" aria-label="3.6 kHz"></div>
+          <div class="eq-label">3.6kHz</div>
+        </div>
+        <div class="eq-band">
+          <div class="eq-value" id="eq14kVal">0</div>
+          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eq14k" min="-12" max="12" step="1" value="0" aria-label="14 kHz"></div>
+          <div class="eq-label">14kHz</div>
+        </div>
+        <div class="eq-band eq-band-wide">
+          <div class="eq-value" id="eqVolVal">90</div>
+          <div class="eq-slider-wrap"><input class="eq-slider" type="range" id="eqVol" min="0" max="1" step="0.01" value="0.9" aria-label="Volume"></div>
+          <div class="eq-label">VOL</div>
+        </div>
       </div>
     </div>
 
@@ -1199,34 +1233,56 @@ function step(delta){
 
 /* ---------------- Audio-reactive glow + Equalizer ---------------- */
 let audioCtx, analyser, audioSource, freqData, pulseRAF;
-let bassFilter, midFilter, trebleFilter;
+let eqFilters = [];
+let spatialSplitter, spatialMerger, leftMainGain, rightMainGain, crossLeftGain, crossRightGain;
 
 function setupAnalyser(){
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   audioSource = audioCtx.createMediaElementSource(audio);
 
-  bassFilter = audioCtx.createBiquadFilter();
-  bassFilter.type = 'lowshelf';
-  bassFilter.frequency.value = 200;
+  const bands = [
+    { id:'eqBass', freq:120, type:'lowshelf' },
+    { id:'eq60', freq:60, type:'peaking', q:1.0 },
+    { id:'eq230', freq:230, type:'peaking', q:1.0 },
+    { id:'eq910', freq:910, type:'peaking', q:0.9 },
+    { id:'eq3600', freq:3600, type:'peaking', q:0.9 },
+    { id:'eq14k', freq:14000, type:'highshelf' }
+  ];
 
-  midFilter = audioCtx.createBiquadFilter();
-  midFilter.type = 'peaking';
-  midFilter.frequency.value = 1000;
-  midFilter.Q.value = 1;
-
-  trebleFilter = audioCtx.createBiquadFilter();
-  trebleFilter.type = 'highshelf';
-  trebleFilter.frequency.value = 3000;
+  eqFilters = bands.map(b => {
+    const f = audioCtx.createBiquadFilter();
+    f.type = b.type;
+    f.frequency.value = b.freq;
+    if (b.q) f.Q.value = b.q;
+    return f;
+  });
 
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 64;
   freqData = new Uint8Array(analyser.frequencyBinCount);
 
-  audioSource.connect(bassFilter);
-  bassFilter.connect(midFilter);
-  midFilter.connect(trebleFilter);
-  trebleFilter.connect(analyser);
+  audioSource.connect(eqFilters[0]);
+  for (let i = 0; i < eqFilters.length - 1; i++) eqFilters[i].connect(eqFilters[i + 1]);
+
+  /* Simple stereo-width processor used by the 3D slider. */
+  spatialSplitter = audioCtx.createChannelSplitter(2);
+  spatialMerger = audioCtx.createChannelMerger(2);
+  leftMainGain = audioCtx.createGain();
+  rightMainGain = audioCtx.createGain();
+  crossLeftGain = audioCtx.createGain();
+  crossRightGain = audioCtx.createGain();
+
+  eqFilters[eqFilters.length - 1].connect(spatialSplitter);
+  spatialSplitter.connect(leftMainGain, 0);
+  spatialSplitter.connect(rightMainGain, 1);
+  spatialSplitter.connect(crossLeftGain, 1);
+  spatialSplitter.connect(crossRightGain, 0);
+  leftMainGain.connect(spatialMerger, 0, 0);
+  rightMainGain.connect(spatialMerger, 0, 1);
+  crossLeftGain.connect(spatialMerger, 0, 0);
+  crossRightGain.connect(spatialMerger, 0, 1);
+  spatialMerger.connect(analyser);
   analyser.connect(audioCtx.destination);
 
   applyEQGains();
@@ -1248,48 +1304,95 @@ function stopPulse(){
   el.platter.style.boxShadow = '';
 }
 
-/* ---- EQ controls (now living in Paramètres) ---- */
-const eqToggle = document.getElementById('eqToggle');
+/* ---- Graphic Equalizer ---- */
 const eqCard = document.getElementById('eqCard');
+const eqPower = document.getElementById('eqPower');
 const eqBass = document.getElementById('eqBass');
-const eqMid = document.getElementById('eqMid');
-const eqTreble = document.getElementById('eqTreble');
-const eqBassVal = document.getElementById('eqBassVal');
-const eqMidVal = document.getElementById('eqMidVal');
-const eqTrebleVal = document.getElementById('eqTrebleVal');
+const eq3d = document.getElementById('eq3d');
+const eq60 = document.getElementById('eq60');
+const eq230 = document.getElementById('eq230');
+const eq910 = document.getElementById('eq910');
+const eq3600 = document.getElementById('eq3600');
+const eq14k = document.getElementById('eq14k');
+const eqVol = document.getElementById('eqVol');
+const eqPreset = document.getElementById('eqPreset');
+const eqBoost = document.getElementById('eqBoost');
 let eqEnabled = true;
+let boostEnabled = false;
+
+function setEqValue(id, value, suffix=''){
+  const out = document.getElementById(id);
+  if (out) out.textContent = String(value) + suffix;
+}
+
+function apply3D(){
+  if (!leftMainGain) return;
+  const width = Number(eq3d.value) / 100 * 0.5;
+  leftMainGain.gain.value = 1 + width;
+  rightMainGain.gain.value = 1 + width;
+  crossLeftGain.gain.value = -width;
+  crossRightGain.gain.value = -width;
+}
 
 function applyEQGains(){
-  if (bassFilter) bassFilter.gain.value = eqEnabled ? Number(eqBass.value) : 0;
-  if (midFilter) midFilter.gain.value = eqEnabled ? Number(eqMid.value) : 0;
-  if (trebleFilter) trebleFilter.gain.value = eqEnabled ? Number(eqTreble.value) : 0;
+  if (eqFilters.length){
+    const values = [eqBass, eq60, eq230, eq910, eq3600, eq14k];
+    eqFilters.forEach((filter, i) => {
+      filter.gain.value = eqEnabled ? Number(values[i].value) + (boostEnabled && i === 0 ? 3 : 0) : 0;
+    });
+  }
+  apply3D();
 }
 
 function updateEqUI(){
-  eqToggle.classList.toggle('on', eqEnabled);
-  eqToggle.setAttribute('aria-checked', String(eqEnabled));
+  eqPower.setAttribute('aria-checked', String(eqEnabled));
+  eqPower.innerHTML = `<span class="${eqEnabled ? '' : 'on'}">OFF</span><span class="${eqEnabled ? 'on' : ''}">ON</span>`;
   eqCard.classList.toggle('disabled', !eqEnabled);
   applyEQGains();
 }
 
-eqToggle.addEventListener('click', () => {
-  eqEnabled = !eqEnabled;
-  updateEqUI();
+function updateEqValues(){
+  setEqValue('eqBassVal', eqBass.value);
+  setEqValue('eq3dVal', eq3d.value);
+  setEqValue('eq60Val', eq60.value);
+  setEqValue('eq230Val', eq230.value);
+  setEqValue('eq910Val', eq910.value);
+  setEqValue('eq3600Val', eq3600.value);
+  setEqValue('eq14kVal', eq14k.value);
+  setEqValue('eqVolVal', Math.round(Number(eqVol.value) * 100));
+}
+
+[eqBass, eq60, eq230, eq910, eq3600, eq14k].forEach(input => {
+  input.addEventListener('input', () => { updateEqValues(); applyEQGains(); });
+});
+eq3d.addEventListener('input', () => { updateEqValues(); apply3D(); });
+eqVol.addEventListener('input', () => {
+  audio.volume = Number(eqVol.value);
+  el.volume.value = eqVol.value;
+  updateEqValues();
 });
 
-eqBass.addEventListener('input', () => {
-  eqBassVal.textContent = eqBass.value;
-  applyEQGains();
-});
-eqMid.addEventListener('input', () => {
-  eqMidVal.textContent = eqMid.value;
-  applyEQGains();
-});
-eqTreble.addEventListener('input', () => {
-  eqTrebleVal.textContent = eqTreble.value;
+eqPower.addEventListener('click', () => { eqEnabled = !eqEnabled; updateEqUI(); });
+eqBoost.addEventListener('click', () => {
+  boostEnabled = !boostEnabled;
+  eqBoost.style.background = boostEnabled ? '#2b6170' : '#18313a';
   applyEQGains();
 });
 
+eqPreset.addEventListener('change', () => {
+  const presets = {
+    normal: [0,0,0,0,0,0],
+    bass: [7,5,3,0,-1,-1],
+    vocal: [0,-1,1,4,4,2],
+    rock: [5,3,-1,2,5,6]
+  };
+  const values = presets[eqPreset.value] || presets.normal;
+  [eqBass,eq60,eq230,eq910,eq3600,eq14k].forEach((input,i) => input.value = values[i]);
+  updateEqValues();
+  applyEQGains();
+});
+
+updateEqValues();
 updateEqUI();
 
 /* ---------------- Events ---------------- */
@@ -1329,8 +1432,9 @@ el.repeatBtn.addEventListener('click', () => {
   repeat = !repeat;
   el.repeatBtn.classList.toggle('active', repeat);
 });
-el.volume.addEventListener('input', () => { audio.volume = el.volume.value; });
+el.volume.addEventListener('input', () => { audio.volume = el.volume.value; eqVol.value = el.volume.value; updateEqValues(); });
 audio.volume = el.volume.value;
+eqVol.value = el.volume.value;
 
 el.groove.addEventListener('click', (e) => {
   if (!audio.duration) return;
