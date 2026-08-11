@@ -255,6 +255,8 @@
   .eq-card.disabled .eq-head-right{ opacity:.38; pointer-events:none; }
   .eq-power{ cursor:pointer; user-select:none; }
   .eq-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
+  .eq-power-box{ display:flex; flex-direction:column; align-items:flex-start; gap:5px; }
+  .eq-title{ font-size:10px; font-weight:700; color:#9ba7ad; letter-spacing:.08em; line-height:1; }
   .eq-power{ display:flex; align-items:center; background:#101418; border:1px solid #273039; border-radius:6px; overflow:hidden; }
   .eq-power span{ padding:4px 7px; font-size:9px; font-weight:700; color:#68737a; letter-spacing:.04em; }
   .eq-power .on{ color:#57d2f2; background:#18313a; }
@@ -265,14 +267,14 @@
   .eq-band{ width:31px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; min-width:0; }
   .eq-band .eq-value{ font-size:8px; color:#647078; height:13px; line-height:13px; font-variant-numeric:tabular-nums; }
   .eq-slider-wrap{ height:150px; width:30px; display:flex; align-items:center; justify-content:center; }
-  .eq-slider{ -webkit-appearance:none; appearance:none; width:65px; height:5px; border-radius:5px; background:#263036; outline:none; transform:rotate(-90deg); transform-origin:center; }
+  .eq-slider{ -webkit-appearance:none; appearance:none; width:190px; height:5px; border-radius:5px; background:#263036; outline:none; transform:rotate(-90deg); transform-origin:center; }
   .eq-slider::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:15px; height:15px; border-radius:3px; background:#4fc4e5; border:1px solid #2b8fa9; box-shadow:0 2px 5px rgba(0,0,0,.45); cursor:pointer; }
   .eq-slider::-moz-range-thumb{ width:15px; height:15px; border-radius:3px; background:#4fc4e5; border:1px solid #2b8fa9; box-shadow:0 2px 5px rgba(0,0,0,.45); cursor:pointer; }
   .eq-slider::-moz-range-track{ height:5px; border-radius:5px; background:#263036; }
   .eq-label{ margin-top:7px; color:#879198; font-size:7.5px; line-height:1.15; text-align:center; white-space:nowrap; }
-  .eq-zero{ position:absolute; width:1px; height:65px; background:rgba(255,255,255,.055); pointer-events:none; }
+  .eq-zero{ position:absolute; width:1px; height:190px; background:rgba(255,255,255,.055); pointer-events:none; }
   .eq-band-wide{ width:34px; }
-  @media (max-width:360px){ .eq-bands{ gap:2px; } .eq-band{ width:28px; } .eq-slider-wrap{ width:28px; } .eq-slider{ width:135px; } .eq-label{ font-size:7px; } }
+  @media (max-width:360px){ .eq-bands{ gap:2px; } .eq-band{ width:28px; } .eq-slider-wrap{ width:28px; } .eq-slider{ width:180px; } .eq-label{ font-size:7px; } }
 
   /* ---------- Playlist ---------- */
   .crate{ margin-top:26px; }
@@ -776,8 +778,11 @@
 
     <div class="eq-card" id="eqCard">
       <div class="eq-head">
-        <div class="eq-power" id="eqPower" role="switch" aria-checked="true" title="Activer / désactiver l'égaliseur">
-          <span>OFF</span><span class="on">ON</span>
+        <div class="eq-power-box">
+          <div class="eq-title">EQUALIZER</div>
+          <div class="eq-power" id="eqPower" role="switch" aria-checked="true" title="Activer / désactiver l'égaliseur">
+            <span>OFF</span><span class="on">ON</span>
+          </div>
         </div>
         <div class="eq-head-right">
           <select class="eq-preset" id="eqPreset" aria-label="Préréglage égaliseur">
