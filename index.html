@@ -817,7 +817,6 @@
             <option value="vocal">Vocal</option>
             <option value="rock">Rock</option>
           </select>
-          <button class="eq-boost" id="eqBoost" type="button">Boost</button>
         </div>
       </div>
       <div class="eq-bands">
@@ -1351,7 +1350,6 @@ const eq3600 = document.getElementById('eq3600');
 const eq14k = document.getElementById('eq14k');
 const eqVol = document.getElementById('eqVol');
 const eqPreset = document.getElementById('eqPreset');
-const eqBoost = document.getElementById('eqBoost');
 let eqEnabled = true;
 let boostEnabled = false;
 
@@ -1419,12 +1417,6 @@ eqPower.addEventListener('keydown', (e) => {
     updateEqUI();
   }
 });
-eqBoost.addEventListener('click', () => {
-  boostEnabled = !boostEnabled;
-  eqBoost.style.background = boostEnabled ? '#2b6170' : '#18313a';
-  applyEQGains();
-});
-
 eqPreset.addEventListener('change', () => {
   const presets = {
     normal: [0,0,0,0,0,0],
