@@ -2141,11 +2141,11 @@ if ('serviceWorker' in navigator) {
 
 <script>
 // ============================================================
-// RHJ PLAYER - JAMENDO + FREE MUSIC ARCHIVE + DEMO TRACKS
+// RHJ PLAYER - FREE MUSIC ARCHIVE + INTERNET ARCHIVE + DEMO
 // ============================================================
 
 // -----------------------------------------------------------------
-// 1. HIRA FANANDRAMANA (raha tsy mandeha ny API)
+// 1. HIRA FANANDRAMANA
 // -----------------------------------------------------------------
 
 const DEMO_TRACKS = [
@@ -2187,85 +2187,79 @@ const DEMO_TRACKS = [
 ];
 
 // -----------------------------------------------------------------
-// 2. FIKAROHANA JAMENDO (misy fanandramana raha tsy mandeha)
+// 2. FIKAROHANA FREE MUSIC ARCHIVE (FMA)
 // -----------------------------------------------------------------
 
-async function searchJamendo(query) {
+async function searchFMA(query) {
   if (!query || query.trim() === '') {
-    alert('❌ Ampio teny fototra hikaroka (ohatra: "jazz", "piano")\n\n🔍 Andramo: jazz, piano, guitar, rock, pop, classical');
+    alert('❌ Ampio teny fototra hikaroka\n\n🔍 Andramo: jazz, piano, guitar, rock, pop, classical');
     return;
   }
 
-  const searchInput = document.querySelector('.search-wrap input');
-  const originalQuery = searchInput ? searchInput.value : query;
-
-  // Mampiseho loading
-  showLoading('🔍 Mikaroka "' + originalQuery + '"...');
+  showLoading('🔍 Mikaroka "' + query + '" amin\'ny Free Music Archive...');
 
   try {
-    // API Jamendo
-    const url = `https://api.jamendo.com/v3.0/tracks/?client_id=4385f4d5&format=json&limit=30&search=${encodeURIComponent(originalQuery)}&order=popularity_total`;
+    // Free Music Archive API
+    const url = `https://freemusicarchive.org/api/get/tracks.json?api_key=60BLHNQCAOUFPIBZ&limit=30&q=${encodeURIComponent(query)}`;
 
-    console.log('🔍 Mikaroka:', url);
+    console.log('🔍 Mikaroka FMA:', url);
     const response = await fetch(url);
     const data = await response.json();
 
-    console.log('📦 Valiny Jamendo:', data);
+    console.log('📦 Valiny FMA:', data);
 
-    // Raha tsy misy valiny, mampiasa demo tracks
-    if (!data.results || data.results.length === 0) {
+    if (!data.dataset || data.dataset.length === 0) {
       hideLoading();
-      showDemoTracks(originalQuery);
+      // Mampiasa demo tracks
+      showDemoTracks(query);
       return;
     }
 
-    // Mampiseho ny hira hita
-    const results = data.results;
+    const results = data.dataset;
     let message = '🎵 HIRA HITA (' + results.length + '):\n\n';
 
-    results.slice(0, 20).forEach((track, index) => {
-      const title = track.name || 'Tsy misy lohateny';
+    results.slice(0, 15).forEach((track, index) => {
+      const title = track.track_title || 'Tsy misy lohateny';
       const artist = track.artist_name || 'Artiste tsy fantatra';
-      const duration = track.duration ? Math.floor(track.duration / 60) + ':' + String(Math.floor(track.duration % 60)).padStart(2, '0') : '--:--';
-      message += (index + 1) + '. ' + title + ' — ' + artist + ' (' + duration + ')\n';
+      message += (index + 1) + '. ' + title + ' — ' + artist + '\n';
     });
 
-    if (results.length > 20) {
-      message += '\n... ary ' + (results.length - 20) + ' hafa.';
+    if (results.length > 15) {
+      message += '\n... ary ' + (results.length - 15) + ' hafa.';
     }
 
     message += '\n\n📥 Hampiakatra hira rehetra? Tena izy!';
 
-    const choix = confirm(message + '\n\n✔️ OK = Hampiditra azy rehetra ao amin\'ny bibliothèque\n❌ Cancel = Tsy hampiditra');
+    const choix = confirm(message + '\n\n✔️ OK = Hampiditra azy rehetra\n❌ Cancel = Tsy hampiditra');
 
     if (!choix) {
       hideLoading();
       return;
     }
 
-    // Hampiditra hira rehetra ao amin'ny bibliothèque
     let addedCount = 0;
     let library = JSON.parse(localStorage.getItem('rhj_library') || '[]');
 
     results.forEach((track) => {
-      const trackId = 'jamendo_' + track.id;
+      const trackId = 'fma_' + track.track_id;
       const exists = library.some(t => t.id === trackId);
       if (!exists) {
-        const audioUrl = track.audio || track.preview || track.mp3 || '';
+        // Mampiasa preview URL
+        const audioUrl = track.track_file_url || track.track_listen_url || '';
         library.push({
           id: trackId,
-          title: track.name || 'Tsy misy lohateny',
+          title: track.track_title || 'Tsy misy lohateny',
           artist: track.artist_name || 'Artiste tsy fantatra',
-          name: track.name || 'Tsy misy lohateny',
+          name: track.track_title || 'Tsy misy lohateny',
           artist_name: track.artist_name || 'Artiste tsy fantatra',
           audio_url: audioUrl,
           url: audioUrl,
           preview: audioUrl,
           downloaded: false,
           license_cc: true,
-          source: 'jamendo',
-          album: track.album_name || 'Album tsy fantatra',
-          duration: track.duration || 0
+          source: 'fma',
+          album: track.album_title || 'Album tsy fantatra',
+          duration: track.track_duration || 0
         });
         addedCount++;
       }
@@ -2275,22 +2269,119 @@ async function searchJamendo(query) {
     hideLoading();
 
     if (addedCount > 0) {
-      alert('✅ ' + addedCount + ' hira vaovao nampidirina tao amin\'ny bibliothèque!\n\n🔁 Avereno (reload) ny pejy mba hahitana azy ireo.');
+      alert('✅ ' + addedCount + ' hira vaovao nampidirina!\n\n🔁 Avereno (reload) ny pejy.');
       location.reload();
     } else {
       alert('⚠️ Efa tao amin\'ny bibliothèque daholo ireo hira ireo.');
     }
 
   } catch (error) {
-    console.error('❌ Erreur API Jamendo:', error);
+    console.error('❌ Erreur FMA:', error);
     hideLoading();
     // Raha tsy mandeha ny API, mampiasa demo tracks
-    showDemoTracks(originalQuery);
+    showDemoTracks(query);
   }
 }
 
 // -----------------------------------------------------------------
-// 3. HIRA FANANDRAMANA (rehefa tsy mandeha ny API)
+// 3. FIKAROHANA INTERNET ARCHIVE (avy amin'ny hira maimaim-poana)
+// -----------------------------------------------------------------
+
+async function searchInternetArchive(query) {
+  if (!query || query.trim() === '') {
+    alert('❌ Ampio teny fototra hikaroka');
+    return;
+  }
+
+  showLoading('🔍 Mikaroka "' + query + '" amin\'ny Internet Archive...');
+
+  try {
+    // Internet Archive Audio Search
+    const url = `https://archive.org/advancedsearch.php?q=${encodeURIComponent(query)}&fl%5B%5D=identifier&fl%5B%5D=title&fl%5B%5D=creator&fl%5B%5D=description&rows=20&page=1&output=json&sort%5B%5D=&sort%5B%5D=&sort%5B%5D=&sort%5B%5D=&sort%5B%5D=`;
+
+    console.log('🔍 Mikaroka IA:', url);
+    const response = await fetch(url);
+    const data = await response.json();
+
+    console.log('📦 Valiny IA:', data);
+
+    if (!data.response || !data.response.docs || data.response.docs.length === 0) {
+      hideLoading();
+      // Mampiasa demo tracks
+      showDemoTracks(query);
+      return;
+    }
+
+    const results = data.response.docs;
+    let message = '🎵 HIRA HITA (' + results.length + '):\n\n';
+
+    results.slice(0, 15).forEach((track, index) => {
+      const title = track.title || 'Tsy misy lohateny';
+      const artist = track.creator || 'Artiste tsy fantatra';
+      message += (index + 1) + '. ' + title + ' — ' + artist + '\n';
+    });
+
+    if (results.length > 15) {
+      message += '\n... ary ' + (results.length - 15) + ' hafa.';
+    }
+
+    message += '\n\n📥 Hampiakatra hira rehetra? Tena izy!';
+
+    const choix = confirm(message + '\n\n✔️ OK = Hampiditra azy rehetra\n❌ Cancel = Tsy hampiditra');
+
+    if (!choix) {
+      hideLoading();
+      return;
+    }
+
+    let addedCount = 0;
+    let library = JSON.parse(localStorage.getItem('rhj_library') || '[]');
+
+    results.forEach((track) => {
+      const trackId = 'ia_' + track.identifier;
+      const exists = library.some(t => t.id === trackId);
+      if (!exists) {
+        // Mampiasa ny hira avy amin'ny Internet Archive
+        const audioUrl = `https://archive.org/download/${track.identifier}/${track.identifier}.mp3`;
+        library.push({
+          id: trackId,
+          title: track.title || 'Tsy misy lohateny',
+          artist: track.creator || 'Artiste tsy fantatra',
+          name: track.title || 'Tsy misy lohateny',
+          artist_name: track.creator || 'Artiste tsy fantatra',
+          audio_url: audioUrl,
+          url: audioUrl,
+          preview: audioUrl,
+          downloaded: false,
+          license_cc: true,
+          source: 'internetarchive',
+          album: 'Internet Archive',
+          duration: 0
+        });
+        addedCount++;
+      }
+    });
+
+    localStorage.setItem('rhj_library', JSON.stringify(library));
+    hideLoading();
+
+    if (addedCount > 0) {
+      alert('✅ ' + addedCount + ' hira vaovao nampidirina!\n\n🔁 Avereno (reload) ny pejy.');
+      location.reload();
+    } else {
+      alert('⚠️ Efa tao amin\'ny bibliothèque daholo ireo hira ireo.');
+    }
+
+  } catch (error) {
+    console.error('❌ Erreur Internet Archive:', error);
+    hideLoading();
+    // Mampiasa demo tracks
+    showDemoTracks(query);
+  }
+}
+
+// -----------------------------------------------------------------
+// 4. HIRA FANANDRAMANA (rehefa tsy mandeha ny API)
 // -----------------------------------------------------------------
 
 function showDemoTracks(query) {
@@ -2329,7 +2420,7 @@ function showDemoTracks(query) {
   localStorage.setItem('rhj_library', JSON.stringify(library));
 
   if (addedCount > 0) {
-    alert('✅ ' + addedCount + ' hira fanandramana nampidirina tao amin\'ny bibliothèque!\n\n🔁 Avereno (reload) ny pejy mba hahitana azy ireo.');
+    alert('✅ ' + addedCount + ' hira fanandramana nampidirina!\n\n🔁 Avereno (reload) ny pejy.');
     location.reload();
   } else {
     alert('⚠️ Efa tao amin\'ny bibliothèque daholo ireo hira ireo.');
@@ -2337,7 +2428,7 @@ function showDemoTracks(query) {
 }
 
 // -----------------------------------------------------------------
-// 4. LOADING
+// 5. LOADING
 // -----------------------------------------------------------------
 
 function showLoading(message) {
@@ -2380,14 +2471,14 @@ function hideLoading() {
 }
 
 // -----------------------------------------------------------------
-// 5. BOKOTRA RECHERCHE
+// 6. BOKOTRA RECHERCHE
 // -----------------------------------------------------------------
 
 // Manampy bokotra Recherche eo akaikin'ny search bar
 const searchWrap = document.querySelector('.search-wrap');
 if (searchWrap) {
   const btn = document.createElement('button');
-  btn.id = 'jamendoSearchBtn';
+  btn.id = 'searchBtn';
   btn.textContent = '🔍 Rechercher';
   btn.style.cssText = `
     background: #E8A33D;
@@ -2406,15 +2497,15 @@ if (searchWrap) {
   searchWrap.appendChild(btn);
 }
 
-// Mametraka ny bokotra recherche
 function setupSearchButton() {
   const searchInput = document.querySelector('.search-wrap input, #searchInput');
-  const searchBtn = document.getElementById('jamendoSearchBtn');
+  const searchBtn = document.getElementById('searchBtn');
 
   if (searchBtn) {
     searchBtn.addEventListener('click', () => {
       const query = searchInput ? searchInput.value : '';
-      searchJamendo(query);
+      // Miezaka amin'ny FMA aloha, raha tsy mandeha dia Internet Archive
+      searchFMA(query);
     });
   }
 
@@ -2422,14 +2513,14 @@ function setupSearchButton() {
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        searchJamendo(searchInput.value);
+        searchFMA(searchInput.value);
       }
     });
   }
 }
 
 // -----------------------------------------------------------------
-// 6. BOKOTRA TÉLÉCHARGEMENT
+// 7. BOKOTRA TÉLÉCHARGEMENT
 // -----------------------------------------------------------------
 
 function addDownloadButtons() {
@@ -2451,7 +2542,7 @@ function addDownloadButtonsToList() {
   lists.forEach(list => {
     const items = list.querySelectorAll('li.track-row, li');
     items.forEach((item) => {
-      if (item.querySelector('.btn-download-jamendo')) return;
+      if (item.querySelector('.btn-download')) return;
 
       const nameEl = item.querySelector('.track-meta .name, .name, .track-title');
       const artistEl = item.querySelector('.track-meta .size, .artist, .track-artist');
@@ -2462,7 +2553,7 @@ function addDownloadButtonsToList() {
       const artist = artistEl ? artistEl.textContent.trim() : 'Artiste tsy fantatra';
 
       const dlBtn = document.createElement('button');
-      dlBtn.className = 'btn-download-jamendo';
+      dlBtn.className = 'btn-download';
       dlBtn.textContent = '⬇ Télécharger';
       dlBtn.style.cssText = `
         background: #2d7a4b;
@@ -2530,7 +2621,7 @@ function addDownloadButtonsToList() {
 }
 
 // -----------------------------------------------------------------
-// 7. FANOMBANA
+// 8. FANOMBANA
 // -----------------------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -2569,9 +2660,9 @@ window.addEventListener('load', function() {
   setTimeout(addDownloadButtonsToList, 800);
 });
 
-console.log('✅ RHJ Jamendo + Demo Tracks + Téléchargement activé!');
-console.log('🔍 Ampiasao ny bokotra "🔍 Rechercher" mba hikaroka hira.');
-console.log('📥 Raha tsy mandeha ny API dia mampiasa hira fanandramana ny programa.');
+console.log('✅ RHJ Player activé!');
+console.log('🔍 Mampiasa Free Music Archive + Internet Archive + Demo Tracks');
+console.log('📥 Tsindrio "⬇ Télécharger" mba hampiditra hira ao amin\'ny bibliothèque.');
 </script>
   
 </body>
