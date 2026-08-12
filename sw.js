@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sillon-v26'; // ovay ihany koa satria misy fanovana APP_SHELL
+const CACHE_NAME = 'sillon-v27'; // ovay ihany koa satria misy fanovana APP_SHELL
 const APP_SHELL = [
   './index.html',
   './manifest.json',
