@@ -769,10 +769,12 @@
   margin-top: 2px;
 }
 
-.info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+/* ---------- GRID 2 COLONNES ---------- */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 20px;
+  margin-bottom: 4px;
 }
 
 .info-item {
@@ -788,15 +790,17 @@
 }
 
 .info-label {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--muted);
+  white-space: nowrap;
 }
 
 .info-value {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--cream);
   font-weight: 500;
   text-align: right;
+  white-space: nowrap;
 }
 
 .info-footer {
@@ -810,12 +814,33 @@
   font-size: 11px;
   color: var(--muted);
   margin: 0;
+  line-height: 1.5;
 }
 
 .info-credits {
   font-size: 11px;
   color: var(--amber-dim);
   margin: 4px 0 0;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 380px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  
+  .info-item {
+    padding: 5px 2px;
+  }
+  
+  .info-label {
+    font-size: 11px;
+  }
+  
+  .info-value {
+    font-size: 11px;
+  }
 }
   
 </style>
@@ -1060,12 +1085,6 @@
         </div>
       </div>
     </div>
-
-    <button class="danger-btn" id="resetDataBtn">
-
-
-
-      
 <!-- ===== FANAMPINY : Informations APK ===== -->
 <div class="info-card">
   <div class="info-card-top">
@@ -1078,7 +1097,8 @@
     </div>
   </div>
   
-  <div class="info-list">
+  <div class="info-grid">
+    <!-- Ligne 1 -->
     <div class="info-item">
       <span class="info-label">📱 Version</span>
       <span class="info-value">2.0.0</span>
@@ -1087,6 +1107,8 @@
       <span class="info-label">📅 Date de build</span>
       <span class="info-value" id="buildDate">2026-08-12</span>
     </div>
+    
+    <!-- Ligne 2 -->
     <div class="info-item">
       <span class="info-label">📦 Package</span>
       <span class="info-value">com.rhj.player</span>
@@ -1095,6 +1117,8 @@
       <span class="info-label">🎵 Morceaux</span>
       <span class="info-value" id="infoTrackCount">0</span>
     </div>
+    
+    <!-- Ligne 3 -->
     <div class="info-item">
       <span class="info-label">💾 Espace utilisé</span>
       <span class="info-value" id="infoStorageUsed">0 Mo</span>
@@ -1103,14 +1127,18 @@
       <span class="info-label">📡 API</span>
       <span class="info-value">Deezer · Spotify</span>
     </div>
+    
+    <!-- Ligne 4 -->
     <div class="info-item">
       <span class="info-label">🌐 Langue</span>
       <span class="info-value">Français · Malagasy</span>
     </div>
     <div class="info-item">
       <span class="info-label">🛠️ Framework</span>
-      <span class="info-value">HTML5 · CSS3 · JavaScript</span>
+      <span class="info-value">HTML5 · CSS3 · JS</span>
     </div>
+    
+    <!-- Ligne 5 -->
     <div class="info-item">
       <span class="info-label">📦 IndexedDB</span>
       <span class="info-value" id="infoDBStatus">✓ Actif</span>
@@ -1122,11 +1150,11 @@
   </div>
 
   <div class="info-footer">
-    <p class="info-copyright">© 2026 RHJ ( RAHERIMANANAN Hajasoa José) Studio — Tous droits réservés</p>
+    <p class="info-copyright">© 2026 RHJ (RAHERIMANANAN Hajasoa José) — Tous droits réservés</p>
     <p class="info-credits">Conçu avec ❤️ pour la musique malagasy</p>
   </div>
 </div>
-
+    <button class="danger-btn" id="resetDataBtn">
       
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 0V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"/></svg>
       Vider la bibliothèque et les playlists
