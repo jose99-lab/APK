@@ -500,6 +500,31 @@
   }
 
   /* ---------- Settings ---------- */
+  .folder-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:16px; margin-bottom:14px;
+  }
+  .folder-card-top{ display:flex; align-items:center; gap:12px; }
+  .folder-card-icon{
+    width:36px; height:36px; border-radius:10px;
+    background:var(--panel-2); color:var(--amber);
+    display:flex; align-items:center; justify-content:center; flex:none;
+  }
+  .folder-card-icon svg{ width:17px; height:17px; }
+  .folder-card-title{ font-size:13.5px; font-weight:600; }
+  .folder-card-sub{ font-size:11.5px; color:var(--muted); margin-top:2px; }
+  .folder-card-actions{ display:flex; gap:8px; margin-top:14px; }
+  .folder-btn{
+    flex:1;
+    background:var(--panel-2); border:1px solid var(--line); color:var(--cream);
+    border-radius:10px; padding:10px 10px; font-family:inherit; font-size:12.5px;
+    cursor:pointer;
+  }
+  .folder-btn.primary{
+    background:linear-gradient(180deg, var(--amber), var(--amber-dim));
+    color:var(--bg); border:none; font-weight:600;
+  }
+
   .eq-card{
     background:var(--panel); border:1px solid var(--line);
     border-radius:16px; padding:16px;
@@ -780,6 +805,10 @@
         </button>
       </div>
 
+      <button class="add-btn" id="connectFolderQuickBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Connecter le dossier musique du téléphone
+      </button>
       <button class="add-btn" id="addBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Ajouter des morceaux (MP3, WAV, M4A…)
@@ -787,7 +816,7 @@
       <input type="file" id="fileInput" accept="audio/*" multiple>
 
       <ul class="track-list" id="trackList"></ul>
-      <div class="empty" id="emptyState">Votre bibliothèque est vide.<br>Ajoutez vos premiers morceaux ci-dessus.</div>
+      <div class="empty" id="emptyState">Votre bibliothèque est vide.<br>Connectez le dossier musique de votre téléphone, ou ajoutez des morceaux manuellement.</div>
     </div>
 
     <p class="foot-note">Vos morceaux sont enregistrés uniquement sur cet appareil.<br>Aucun fichier n'est envoyé sur internet.</p>
@@ -850,6 +879,23 @@
     <div class="crate-head">
       <h2>Paramètres</h2>
     </div>
+
+    <div class="folder-card" id="folderCard">
+      <div class="folder-card-top">
+        <div class="folder-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div>
+          <div class="folder-card-title">Dossier de musique</div>
+          <div class="folder-card-sub" id="folderStatusText">Non connecté</div>
+        </div>
+      </div>
+      <div class="folder-card-actions">
+        <button class="folder-btn primary" id="connectFolderBtn">Connecter un dossier</button>
+        <button class="folder-btn" id="rescanFolderBtn" style="display:none">Actualiser</button>
+      </div>
+    </div>
+
     <div class="settings-stats">
       <div class="stat-box">
         <div class="num" id="statTracks">0</div>
@@ -961,9 +1007,10 @@
 <script>
 /* ---------------- IndexedDB storage ---------------- */
 const DB_NAME = 'sillon-player';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE = 'tracks';
 const PSTORE = 'playlists';
+const MSTORE = 'meta';
 
 function openDB(){
   return new Promise((resolve, reject) => {
@@ -975,6 +1022,9 @@ function openDB(){
       }
       if (!db.objectStoreNames.contains(PSTORE)) {
         db.createObjectStore(PSTORE, { keyPath: 'id', autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains(MSTORE)) {
+        db.createObjectStore(MSTORE, { keyPath: 'key' });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -1041,9 +1091,28 @@ const dbAddPlaylist = (p) => dbAddTo(PSTORE, p);
 const dbPutPlaylist = (p) => dbPutTo(PSTORE, p);
 const dbDeletePlaylist = (id) => dbDeleteFrom(PSTORE, id);
 
+async function dbGetMeta(key){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(MSTORE, 'readonly');
+    const req = tx.objectStore(MSTORE).get(key);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function dbSetMeta(key, handle){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(MSTORE, 'readwrite');
+    const req = tx.objectStore(MSTORE).put({ key, handle });
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
 /* ---------------- Player state ---------------- */
 const audio = document.getElementById('audio');
-let playlist = [];       // {id, name, size, blob, title, artist, album}
+let playlist = [];       // {id, name, size, blob, title, artist, album, source}
 let playlists = [];      // {id, name, trackIds:[]}
 let currentIndex = -1;
 let objectUrl = null;
@@ -1093,6 +1162,10 @@ function fmtTime(s){
 
 function niceName(filename){
   return filename.replace(/\.[^/.]+$/, '');
+}
+
+function parseTrackId(raw){
+  return /^\d+$/.test(raw) ? Number(raw) : raw;
 }
 
 function initials(str){
@@ -1186,6 +1259,163 @@ function guessFromFilename(filename){
   return { artist: null, title: base };
 }
 
+/* ---------------- Dossier de musique du téléphone (File System Access API) ---------------- */
+const AUDIO_EXT_RE = /\.(mp3|wav|m4a|ogg|oga|flac|aac|opus)$/i;
+const supportsFS = 'showDirectoryPicker' in window;
+
+let folderHandle = null;
+let folderConnected = false;
+let folderScanning = false;
+
+const folderStatusText = document.getElementById('folderStatusText');
+const connectFolderBtn = document.getElementById('connectFolderBtn');
+const rescanFolderBtn = document.getElementById('rescanFolderBtn');
+const connectFolderQuickBtn = document.getElementById('connectFolderQuickBtn');
+
+function renderFolderStatus(){
+  if (!supportsFS){
+    folderStatusText.textContent = "Non disponible sur ce navigateur — utilisez « Ajouter des morceaux »";
+    connectFolderBtn.style.display = 'none';
+    rescanFolderBtn.style.display = 'none';
+    connectFolderQuickBtn.style.display = 'none';
+    return;
+  }
+  connectFolderQuickBtn.style.display = 'flex';
+  if (folderScanning){
+    folderStatusText.textContent = 'Lecture du dossier en cours…';
+    connectFolderBtn.style.display = 'none';
+    rescanFolderBtn.style.display = 'none';
+  } else if (folderHandle && folderConnected){
+    const count = playlist.filter(t => t.source === 'folder').length;
+    folderStatusText.textContent = 'Connecté : ' + (folderHandle.name || 'dossier') + ' — ' + count + (count === 1 ? ' morceau' : ' morceaux');
+    connectFolderBtn.textContent = 'Changer de dossier';
+    connectFolderBtn.style.display = 'block';
+    rescanFolderBtn.style.display = 'block';
+  } else if (folderHandle && !folderConnected){
+    folderStatusText.textContent = 'Autorisation nécessaire pour continuer';
+    connectFolderBtn.textContent = 'Reconnecter';
+    connectFolderBtn.style.display = 'block';
+    rescanFolderBtn.style.display = 'none';
+  } else {
+    folderStatusText.textContent = 'Non connecté';
+    connectFolderBtn.textContent = 'Connecter un dossier';
+    connectFolderBtn.style.display = 'block';
+    rescanFolderBtn.style.display = 'none';
+  }
+}
+
+async function walkDirectory(dirHandle, path, out, depth){
+  if (depth > 4) return;
+  for await (const [name, handle] of dirHandle.entries()){
+    if (handle.kind === 'file'){
+      if (AUDIO_EXT_RE.test(name)) out.push({ path: path + name, name, handle });
+    } else if (handle.kind === 'directory'){
+      await walkDirectory(handle, path + name + '/', out, depth + 1);
+    }
+  }
+}
+
+async function scanFolder(){
+  if (!folderHandle) return;
+  folderScanning = true;
+  renderFolderStatus();
+
+  const found = [];
+  try {
+    await walkDirectory(folderHandle, '', found, 0);
+  } catch (e) {
+    console.warn('Lecture du dossier impossible', e);
+  }
+
+  playlist = playlist.filter(t => t.source !== 'folder');
+
+  for (const f of found){
+    let tags = null;
+    let file;
+    try { file = await f.handle.getFile(); } catch (e) { continue; }
+    if (/\.mp3$/i.test(f.name)) tags = await parseID3(file);
+    const guess = guessFromFilename(f.name);
+    const title = (tags && tags.title) || guess.title || niceName(f.name);
+    const artist = (tags && tags.artist) || guess.artist || null;
+    const album = (tags && tags.album) || null;
+    playlist.push({
+      id: 'f:' + f.path,
+      name: f.name,
+      size: file.size,
+      blob: file,
+      title, artist, album,
+      source: 'folder',
+    });
+  }
+
+  folderScanning = false;
+  renderList();
+  renderFolderStatus();
+}
+
+async function connectMusicFolder(){
+  if (!supportsFS){
+    alert("Votre navigateur ne permet pas de connecter un dossier automatiquement. Utilisez « Ajouter des morceaux » pour importer votre musique.");
+    return;
+  }
+  try {
+    const handle = await window.showDirectoryPicker();
+    const perm = await handle.requestPermission({ mode: 'read' });
+    if (perm !== 'granted') return;
+    folderHandle = handle;
+    folderConnected = true;
+    await dbSetMeta('musicFolder', handle);
+    await scanFolder();
+  } catch (e) {
+    /* choix annulé par l'utilisateur */
+  }
+  renderFolderStatus();
+}
+
+async function reconnectMusicFolder(){
+  if (!folderHandle) return connectMusicFolder();
+  try {
+    const perm = await folderHandle.requestPermission({ mode: 'read' });
+    if (perm === 'granted'){
+      folderConnected = true;
+      await scanFolder();
+    }
+  } catch (e) { /* ignore */ }
+  renderFolderStatus();
+}
+
+connectFolderBtn.addEventListener('click', () => {
+  if (folderHandle && !folderConnected) reconnectMusicFolder();
+  else connectMusicFolder();
+});
+connectFolderQuickBtn.addEventListener('click', () => {
+  if (folderHandle && !folderConnected) reconnectMusicFolder();
+  else connectMusicFolder();
+});
+rescanFolderBtn.addEventListener('click', () => {
+  if (folderHandle && folderConnected) scanFolder();
+});
+
+async function trySilentFolderLoad(){
+  if (!supportsFS){ renderFolderStatus(); return; }
+  try {
+    const meta = await dbGetMeta('musicFolder');
+    if (meta && meta.handle){
+      folderHandle = meta.handle;
+      const perm = await folderHandle.queryPermission({ mode: 'read' });
+      if (perm === 'granted'){
+        folderConnected = true;
+        await scanFolder();
+      } else {
+        folderConnected = false;
+      }
+    }
+  } catch (e) {
+    console.warn('Reconnexion automatique au dossier impossible', e);
+  }
+  renderFolderStatus();
+}
+
 /* ---------------- Modal helpers ---------------- */
 const modalOverlay = document.getElementById('modalOverlay');
 const modalBox = document.getElementById('modalBox');
@@ -1251,18 +1481,19 @@ function renderList(){
         <button class="track-add" data-id="${t.id}" title="Ajouter à une playlist">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
-        <button class="track-del" data-id="${t.id}" title="Supprimer">
+        ${t.source === 'folder' ? '' : `<button class="track-del" data-id="${t.id}" title="Supprimer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        </button>`}
       </div>
     `;
     li.addEventListener('click', (e) => {
       if (e.target.closest('.track-del') || e.target.closest('.track-add')) return;
       loadTrack(i, true);
     });
-    li.querySelector('.track-del').addEventListener('click', async (e) => {
+    const delBtn = li.querySelector('.track-del');
+    if (delBtn) delBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const id = Number(e.currentTarget.dataset.id);
+      const id = parseTrackId(e.currentTarget.dataset.id);
       await dbDelete(id);
       const wasCurrent = playlist[i] && playlist[i].id === id;
       playlist = playlist.filter(t2 => t2.id !== id);
@@ -1280,7 +1511,7 @@ function renderList(){
     });
     li.querySelector('.track-add').addEventListener('click', (e) => {
       e.stopPropagation();
-      const id = Number(e.currentTarget.dataset.id);
+      const id = parseTrackId(e.currentTarget.dataset.id);
       openAddToPlaylistModal(id);
     });
     el.trackList.appendChild(li);
@@ -1529,7 +1760,7 @@ el.fileInput.addEventListener('change', async (e) => {
     const artist = sanitizeTag(tags && tags.artist) || sanitizeTag(guess.artist) || null;
     const album = sanitizeTag(tags && tags.album) || null;
     const id = await dbAdd({ name: f.name, size: f.size, type: f.type, blob: f, title, artist, album });
-    playlist.push({ id, name: f.name, size: f.size, blob: f, title, artist, album });
+    playlist.push({ id, name: f.name, size: f.size, blob: f, title, artist, album, source: 'manual' });
   }
   renderList();
   e.target.value = '';
@@ -1804,7 +2035,7 @@ function openAddTracksModal(playlistId){
     openModal(html());
     modalBox.querySelectorAll('.modal-row').forEach(row => {
       row.addEventListener('click', async () => {
-        const tid = Number(row.dataset.tid);
+        const tid = parseTrackId(row.dataset.tid);
         const p = playlists.find(pl => pl.id === playlistId);
         if (!p) return;
         if (p.trackIds.includes(tid)) p.trackIds = p.trackIds.filter(id => id !== tid);
@@ -1830,20 +2061,24 @@ function renderSettings(){
 }
 
 document.getElementById('resetDataBtn').addEventListener('click', async () => {
-  if (!confirm('Ceci supprimera définitivement tous vos morceaux et toutes vos playlists de cet appareil. Continuer ?')) return;
+  if (!confirm("Ceci supprimera définitivement les morceaux ajoutés manuellement, toutes vos playlists, et oubliera le dossier de musique connecté. Continuer ?")) return;
   audio.pause();
   if (objectUrl) URL.revokeObjectURL(objectUrl);
   await dbClear(STORE);
   await dbClear(PSTORE);
+  await dbClear(MSTORE);
   playlist = [];
   playlists = [];
   currentIndex = -1;
   activeFilter = null;
+  folderHandle = null;
+  folderConnected = false;
   el.title.textContent = 'Aucun morceau chargé';
   el.artist.textContent = 'Ajoutez de la musique ci-dessous';
   setPlayingVisual(false);
   renderList();
   renderSettings();
+  renderFolderStatus();
 });
 
 /* ---------------- Bottom navigation ---------------- */
@@ -1860,7 +2095,7 @@ function switchView(viewId, navId){
   if (viewId === 'view-artists') renderArtists();
   if (viewId === 'view-playlists') renderPlaylists();
   if (viewId === 'view-playlist-detail' && currentPlaylistDetailId != null) renderPlaylistDetail(currentPlaylistDetailId);
-  if (viewId === 'view-settings') renderSettings();
+  if (viewId === 'view-settings'){ renderSettings(); renderFolderStatus(); }
 }
 
 navItems.forEach(btn => {
@@ -1874,13 +2109,14 @@ navItems.forEach(btn => {
 (async function init(){
   try {
     const savedTracks = await dbAll();
-    playlist = savedTracks.map(t => ({ id: t.id, name: t.name, size: t.size, blob: t.blob, title: t.title, artist: t.artist, album: t.album }));
+    playlist = savedTracks.map(t => ({ id: t.id, name: t.name, size: t.size, blob: t.blob, title: t.title, artist: t.artist, album: t.album, source: 'manual' }));
     const savedPlaylists = await dbAllPlaylists();
     playlists = savedPlaylists.map(p => ({ id: p.id, name: p.name, trackIds: p.trackIds || [] }));
     renderList();
   } catch (err) {
     console.warn('IndexedDB unavailable', err);
   }
+  await trySilentFolderLoad();
 })();
 
 if ('serviceWorker' in navigator) {
