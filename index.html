@@ -2175,9 +2175,10 @@ if (searchWrap) {
 // -----------------------------------------------------------------
 
 // Fiasa hikaroka hira amin'ny alalan'ny API Jamendo
+// Soloy ny fiasa searchJamendo() amin'ity manaraka ity
 async function searchJamendo(query) {
   if (!query || query.trim() === '') {
-    alert('❌ Ampio teny fototra hikaroka (ohatra: "piano", "jazz")');
+    alert('❌ Ampio teny fototra hikaroka (ohatra: "jazz", "piano")');
     return;
   }
 
@@ -2185,14 +2186,17 @@ async function searchJamendo(query) {
   const originalQuery = searchInput ? searchInput.value : query;
 
   try {
-    // API Jamendo (mamokatra hira Creative Commons)
-    const url = `https://api.jamendo.com/v3.0/tracks/?client_id=4385f4d5&format=json&limit=30&search=${encodeURIComponent(originalQuery)}&order=popularity_total`;
+    // 🔧 FANITSINA: Mampiasa API samihafa mba hahazoana vokatra betsaka
+    const url = `https://api.jamendo.com/v3.0/tracks/?client_id=4385f4d5&format=json&limit=50&search=${encodeURIComponent(originalQuery)}&order=popularity_total&tags=rock,pop,jazz,classical,electronic,acoustic`;
 
+    console.log('🔍 Mikaroka:', url);
     const response = await fetch(url);
     const data = await response.json();
 
+    console.log('📦 Valiny:', data);
+
     if (!data.results || data.results.length === 0) {
-      alert('😕 Tsy nisy hira hita tamin\'ny teny "' + originalQuery + '". Andramo teny hafa.');
+      alert('😕 Tsy nisy hira hita tamin\'ny teny "' + originalQuery + '".\n\nAndramo ireto teny ireto:\njazz, piano, guitar, rock, pop, classical, ambient, electronic, acoustic, folk, blues, reggae, hip hop, lofi');
       return;
     }
 
@@ -2200,13 +2204,18 @@ async function searchJamendo(query) {
     const results = data.results;
     let message = '🎵 HIRA HITA (' + results.length + '):\n\n';
 
-    results.forEach((track, index) => {
+    results.slice(0, 20).forEach((track, index) => {
       const title = track.name || 'Tsy misy lohateny';
       const artist = track.artist_name || 'Artiste tsy fantatra';
-      message += (index + 1) + '. ' + title + ' — ' + artist + '\n';
+      const duration = track.duration ? Math.floor(track.duration / 60) + ':' + String(Math.floor(track.duration % 60)).padStart(2, '0') : '--:--';
+      message += (index + 1) + '. ' + title + ' — ' + artist + ' (' + duration + ')\n';
     });
 
-    message += '\n📥 Hampiakatra hira? Tena izy!';
+    if (results.length > 20) {
+      message += '\n... ary ' + (results.length - 20) + ' hafa.';
+    }
+
+    message += '\n\n📥 Hampiakatra hira rehetra? Tena izy!';
 
     const choix = confirm(message + '\n\n✔️ OK = Hampiditra azy rehetra ao amin\'ny bibliothèque\n❌ Cancel = Tsy hampiditra');
 
@@ -2220,19 +2229,21 @@ async function searchJamendo(query) {
       const trackId = 'jamendo_' + track.id;
       const exists = library.some(t => t.id === trackId);
       if (!exists) {
+        const audioUrl = track.audio || track.preview || track.mp3 || '';
         library.push({
           id: trackId,
           title: track.name || 'Tsy misy lohateny',
           artist: track.artist_name || 'Artiste tsy fantatra',
           name: track.name || 'Tsy misy lohateny',
           artist_name: track.artist_name || 'Artiste tsy fantatra',
-          audio_url: track.audio || '',
-          url: track.audio || '',
-          preview: track.audio || '',
+          audio_url: audioUrl,
+          url: audioUrl,
+          preview: audioUrl,
           downloaded: false,
           license_cc: true,
           source: 'jamendo',
-          album: track.album_name || 'Album tsy fantatra'
+          album: track.album_name || 'Album tsy fantatra',
+          duration: track.duration || 0
         });
         addedCount++;
       }
@@ -2240,17 +2251,16 @@ async function searchJamendo(query) {
 
     localStorage.setItem('rhj_library', JSON.stringify(library));
 
-    // ✅ Manavao ny bibliothèque (reload)
     if (addedCount > 0) {
-      alert('✅ ' + addedCount + ' hira vaovao nampidirina tao amin\'ny bibliothèque!\n\n🔁 Avereno (reload) ny pejy mba hahitana azy ireo.');
+      alert('✅ ' + addedCount + ' hira vaovao nampidirina tao amin\'ny bibliothèque!\n\n🔁 Avereno (reload) ny pejy mba hahitana azy ireo.\n\n🎵 Misy hira azonao halaina? Tsindrio "⬇ Télécharger" eo amin\'ny isaky ny hira.');
       location.reload();
     } else {
       alert('⚠️ Efa tao amin\'ny bibliothèque daholo ireo hira ireo.');
     }
 
   } catch (error) {
-    console.error('Erreur API Jamendo:', error);
-    alert('❌ Tsy nahomby ny fikarohana. Jereo ny fifandraisanao aterineto.');
+    console.error('❌ Erreur API Jamendo:', error);
+    alert('❌ Tsy nahomby ny fikarohana.\n\nJereo ny fifandraisanao aterineto.\nRaha mbola tsy mandeha dia andramo amin\'ny teny toy ny: jazz, piano, guitar');
   }
 }
 
