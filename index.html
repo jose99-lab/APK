@@ -720,6 +720,104 @@
     .platter-wrap{ height:170px; }
     .nav-item span{ font-size:9px; }
   }
+ <!-- ===== CSS INFORMATION APK ===== -->
+  
+/* ---------- Informations APK ---------- */
+.info-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px 16px;
+  margin-bottom: 18px;
+}
+
+.info-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.info-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--panel-2);
+  color: var(--amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.info-card-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.info-card-title {
+  font-family: 'Fraunces', serif;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.info-card-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.info-value {
+  font-size: 12.5px;
+  color: var(--cream);
+  font-weight: 500;
+  text-align: right;
+}
+
+.info-footer {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.info-copyright {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.info-credits {
+  font-size: 11px;
+  color: var(--amber-dim);
+  margin: 4px 0 0;
+}
+  
 </style>
 </head>
 <body>
@@ -964,6 +1062,72 @@
     </div>
 
     <button class="danger-btn" id="resetDataBtn">
+
+
+
+      
+<!-- ===== FANAMPINY : Informations APK ===== -->
+<div class="info-card">
+  <div class="info-card-top">
+    <div class="info-card-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </div>
+    <div>
+      <div class="info-card-title">À propos de l'application</div>
+      <div class="info-card-sub">RHJ Player Music</div>
+    </div>
+  </div>
+  
+  <div class="info-list">
+    <div class="info-item">
+      <span class="info-label">📱 Version</span>
+      <span class="info-value">2.0.0</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">📅 Date de build</span>
+      <span class="info-value" id="buildDate">2026-08-12</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">📦 Package</span>
+      <span class="info-value">com.rhj.player</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">🎵 Morceaux</span>
+      <span class="info-value" id="infoTrackCount">0</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">💾 Espace utilisé</span>
+      <span class="info-value" id="infoStorageUsed">0 Mo</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">📡 API</span>
+      <span class="info-value">Deezer · Spotify</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">🌐 Langue</span>
+      <span class="info-value">Français · Malagasy</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">🛠️ Framework</span>
+      <span class="info-value">HTML5 · CSS3 · JavaScript</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">📦 IndexedDB</span>
+      <span class="info-value" id="infoDBStatus">✓ Actif</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">📱 Service Worker</span>
+      <span class="info-value" id="infoSWStatus">✓ Actif</span>
+    </div>
+  </div>
+
+  <div class="info-footer">
+    <p class="info-copyright">© 2026 RHJ ( RAHERIMANANAN Hajasoa José) Studio — Tous droits réservés</p>
+    <p class="info-credits">Conçu avec ❤️ pour la musique malagasy</p>
+  </div>
+</div>
+
+      
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 0V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"/></svg>
       Vider la bibliothèque et les playlists
     </button>
