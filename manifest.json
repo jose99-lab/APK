@@ -1,6 +1,6 @@
 {
-  "name": "Sillon — lecteur de musique",
-  "short_name": "Sillon",
+  "name": "RHJ Player Music",
+  "short_name": "RHJ Player",
   "description": "Lecteur de musique hors-ligne avec bibliothèque locale.",
   "start_url": "./index.html",
   "scope": "./",
