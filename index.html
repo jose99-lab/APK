@@ -2143,30 +2143,97 @@ if ('serviceWorker' in navigator) {
 
 <script>
 // ============================================================
-// RHJ PLAYER - MULTI API SEARCH
-// Deezer + Spotify + SoundCloud + (YouTube Music tsy misy API)
+// RHJ PLAYER - RECHERCHE + API + HIRA MALAGASY
 // ============================================================
 
 // -----------------------------------------------------------------
-// 1. CONFIGURATION API
+// 1. CONFIGURATION API - AMPIDIRO ETO NY CLÉ-NAO
 // -----------------------------------------------------------------
 
-// 🔑 Raha manana clé Spotify ianao dia apetraho eto
-const SPOTIFY_CLIENT_ID = 'VOTRE_CLIENT_ID_ETO';
-const SPOTIFY_CLIENT_SECRET = 'VOTRE_CLIENT_SECRET_ETO';
+// 🔑 Spotify (mila clé)
+const SPOTIFY_CLIENT_ID = ''; // Apetraho eo ny Client ID
+const SPOTIFY_CLIENT_SECRET = ''; // Apetraho eo ny Client Secret
 
-// 🔑 Raha manana clé SoundCloud ianao dia apetraho eto
-const SOUNDCLOUD_CLIENT_ID = 'VOTRE_CLIENT_ID_ETO';
+// 🔑 SoundCloud (mila clé)
+const SOUNDCLOUD_CLIENT_ID = ''; // Apetraho eo ny Client ID
+
+// 🔑 YouTube (mila clé)
+const YOUTUBE_API_KEY = ''; // Apetraho eo ny API Key
 
 // -----------------------------------------------------------------
-// 2. FIKAROHANA DEEZER (tsotra, tsy mila clé)
+// 2. FANAMPINA BOKOTRA RECHERCHE
+// -----------------------------------------------------------------
+
+// Manampy bokotra Recherche eo akaikin'ny search bar
+function addSearchButton() {
+  const searchWrap = document.querySelector('.search-wrap');
+  if (!searchWrap) {
+    console.log('⚠️ Tsy hita ny search-wrap');
+    return;
+  }
+
+  // Raha efa misy dia tsy ampiana indray
+  if (document.getElementById('searchBtn')) return;
+
+  const btn = document.createElement('button');
+  btn.id = 'searchBtn';
+  btn.textContent = '🔍 Rechercher';
+  btn.style.cssText = `
+    background: #E8A33D;
+    border: none;
+    border-radius: 40px;
+    padding: 8px 18px;
+    color: #14110F;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    flex: none;
+    transition: 0.2s;
+  `;
+  btn.onmouseover = () => btn.style.background = '#f0b84d';
+  btn.onmouseout = () => btn.style.background = '#E8A33D';
+
+  // Manala ny bokotra taloha raha misy
+  const oldBtn = searchWrap.querySelector('#searchBtn');
+  if (oldBtn) oldBtn.remove();
+
+  searchWrap.appendChild(btn);
+  console.log('✅ Bokotra Recherche nampidirina');
+
+  // Mametraka ny fiasa
+  const searchInput = document.querySelector('.search-wrap input, #searchInput');
+  
+  btn.addEventListener('click', () => {
+    const query = searchInput ? searchInput.value : '';
+    if (query.trim()) {
+      searchAllMusic(query);
+    } else {
+      alert('❌ Ampio teny fototra hikaroka\n\n💡 Andramo: jazz, piano, hira gasy, Jaojoby');
+    }
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const query = searchInput.value;
+        if (query.trim()) {
+          searchAllMusic(query);
+        }
+      }
+    });
+  }
+}
+
+// -----------------------------------------------------------------
+// 3. FIKAROHANA DEEZER (tsy mila clé)
 // -----------------------------------------------------------------
 
 async function searchDeezer(query) {
   if (!query || query.trim() === '') return null;
 
   try {
-    const url = `https://api.deezer.com/search/track?q=${encodeURIComponent(query)}&limit=20`;
+    const url = `https://api.deezer.com/search/track?q=${encodeURIComponent(query)}&limit=25`;
     const response = await fetch(url);
     const data = await response.json();
 
@@ -2191,12 +2258,12 @@ async function searchDeezer(query) {
 }
 
 // -----------------------------------------------------------------
-// 3. FIKAROHANA SPOTIFY (mila clé)
+// 4. FIKAROHANA SPOTIFY (mila clé)
 // -----------------------------------------------------------------
 
 async function getSpotifyToken() {
-  if (!SPOTIFY_CLIENT_ID || SPOTIFY_CLIENT_ID === 'VOTRE_CLIENT_ID_ETO') {
-    console.warn('⚠️ Tsy misy Spotify Client ID');
+  if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
+    console.warn('⚠️ Tsy misy Spotify Client ID na Secret');
     return null;
   }
 
@@ -2224,7 +2291,7 @@ async function searchSpotify(query) {
   if (!token) return null;
 
   try {
-    const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=20`;
+    const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=25`;
     const response = await fetch(url, {
       headers: { 'Authorization': 'Bearer ' + token }
     });
@@ -2251,18 +2318,18 @@ async function searchSpotify(query) {
 }
 
 // -----------------------------------------------------------------
-// 4. FIKAROHANA SOUNDCLOUD (mila clé)
+// 5. FIKAROHANA SOUNDCLOUD (mila clé)
 // -----------------------------------------------------------------
 
 async function searchSoundCloud(query) {
   if (!query || query.trim() === '') return null;
-  if (!SOUNDCLOUD_CLIENT_ID || SOUNDCLOUD_CLIENT_ID === 'VOTRE_CLIENT_ID_ETO') {
+  if (!SOUNDCLOUD_CLIENT_ID) {
     console.warn('⚠️ Tsy misy SoundCloud Client ID');
     return null;
   }
 
   try {
-    const url = `https://api.soundcloud.com/tracks?q=${encodeURIComponent(query)}&client_id=${SOUNDCLOUD_CLIENT_ID}&limit=20`;
+    const url = `https://api.soundcloud.com/tracks?q=${encodeURIComponent(query)}&client_id=${SOUNDCLOUD_CLIENT_ID}&limit=25`;
     const response = await fetch(url);
     const data = await response.json();
 
@@ -2287,26 +2354,17 @@ async function searchSoundCloud(query) {
 }
 
 // -----------------------------------------------------------------
-// 5. FIKAROHANA YOUTUBE MUSIC (tsisy API ofisialy)
+// 6. FIKAROHANA YOUTUBE (mila clé)
 // -----------------------------------------------------------------
-
-// ⚠️ YouTube Music tsy misy API ofisialy ho an'ny navigateur
-// Mampiasa YouTube Data API v3 izahay (mila clé)
 
 async function searchYouTube(query) {
   if (!query || query.trim() === '') return null;
-  
-  // ⚠️ Mila clé YouTube Data API v3 ianao
-  // https://console.cloud.google.com/
-  const YOUTUBE_API_KEY = 'VOTRE_YOUTUBE_API_KEY_ETO';
-  
-  if (YOUTUBE_API_KEY === 'VOTRE_YOUTUBE_API_KEY_ETO') {
+  if (!YOUTUBE_API_KEY) {
     console.warn('⚠️ Tsy misy YouTube API Key');
     return null;
   }
 
   try {
-    // Mitady horonantsary mozika
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&q=${encodeURIComponent(query + ' music')}&key=${YOUTUBE_API_KEY}&maxResults=15`;
     const response = await fetch(url);
     const data = await response.json();
@@ -2333,26 +2391,12 @@ async function searchYouTube(query) {
 }
 
 // -----------------------------------------------------------------
-// 6. FIKAROHANA APPLE MUSIC (mila clé sy mandoa)
-// -----------------------------------------------------------------
-
-// ⚠️ Apple Music API dia mila:
-// - Developer Token (mandoa $99/taona)
-// - Music User Token (mila OAuth)
-// Tsy azo ampiasaina amin'ny navigateur tsotra
-
-async function searchAppleMusic(query) {
-  console.warn('⚠️ Apple Music API tsy azo ampiasaina amin\'ny navigateur tsotra');
-  return null;
-}
-
-// -----------------------------------------------------------------
-// 7. FIKAROHANA REHETRA (API rehetra miaraka)
+// 7. FIKAROHANA REHETRA
 // -----------------------------------------------------------------
 
 async function searchAllMusic(query) {
   if (!query || query.trim() === '') {
-    alert('❌ Ampio teny fototra hikaroka\n\n🔍 Andramo: jazz, piano, guitar, rock, pop, classical');
+    alert('❌ Ampio teny fototra hikaroka\n\n💡 Andramo:\n- jazz, piano, guitar\n- hira gasy, Jaojoby\n- salegy, tsapiky');
     return;
   }
 
@@ -2361,28 +2405,28 @@ async function searchAllMusic(query) {
   let allResults = [];
   let sources = [];
 
-  // 1. Deezer
+  // 1. Deezer (tsy mila clé)
   const deezerResults = await searchDeezer(query);
   if (deezerResults && deezerResults.length > 0) {
     allResults = allResults.concat(deezerResults);
     sources.push('Deezer');
   }
 
-  // 2. Spotify
+  // 2. Spotify (mila clé)
   const spotifyResults = await searchSpotify(query);
   if (spotifyResults && spotifyResults.length > 0) {
     allResults = allResults.concat(spotifyResults);
     sources.push('Spotify');
   }
 
-  // 3. SoundCloud
+  // 3. SoundCloud (mila clé)
   const soundcloudResults = await searchSoundCloud(query);
   if (soundcloudResults && soundcloudResults.length > 0) {
     allResults = allResults.concat(soundcloudResults);
     sources.push('SoundCloud');
   }
 
-  // 4. YouTube
+  // 4. YouTube (mila clé)
   const youtubeResults = await searchYouTube(query);
   if (youtubeResults && youtubeResults.length > 0) {
     allResults = allResults.concat(youtubeResults);
@@ -2393,21 +2437,28 @@ async function searchAllMusic(query) {
 
   if (allResults.length === 0) {
     alert('😕 Tsy nisy hira hita tamin\'ny "' + query + '".\n\n' +
-          '💡 Andramo teny hafa: jazz, piano, guitar, rock, pop, classical, ambient, electronic, acoustic, folk, blues, reggae, lofi\n\n' +
-          '⚠️ Mila clé API ny Spotify, SoundCloud ary YouTube vao miasa izy ireo.');
+          '💡 Andramo teny hafa:\n' +
+          '• jazz, piano, guitar, rock, pop\n' +
+          '• hira gasy, Jaojoby, Rossy\n' +
+          '• salegy, tsapiky, basesa\n\n' +
+          '⚠️ Spotify, SoundCloud ary YouTube dia mila clé API vao miasa.');
     return;
   }
 
   // Mampiseho valiny
-  let message = '🎵 HIRA HITA (' + allResults.length + ') avy amin\'ny: ' + sources.join(', ') + '\n\n';
+  let message = '🎵 HIRA HITA (' + allResults.length + ')\n';
+  message += '📡 Avy amin\'ny: ' + sources.join(', ') + '\n\n';
 
-  allResults.slice(0, 20).forEach((track, index) => {
+  allResults.slice(0, 25).forEach((track, index) => {
     const duration = track.duration ? Math.floor(track.duration / 60) + ':' + String(Math.floor(track.duration % 60)).padStart(2, '0') : '--:--';
-    message += (index + 1) + '. ' + track.title + ' — ' + track.artist + ' (' + duration + ') [' + track.source + ']\n';
+    const sourceIcon = track.source === 'Deezer' ? '🎵' : 
+                       track.source === 'Spotify' ? '🟢' : 
+                       track.source === 'SoundCloud' ? '☁️' : '▶️';
+    message += (index + 1) + '. ' + sourceIcon + ' ' + track.title + ' — ' + track.artist + ' (' + duration + ')\n';
   });
 
-  if (allResults.length > 20) {
-    message += '\n... ary ' + (allResults.length - 20) + ' hafa.';
+  if (allResults.length > 25) {
+    message += '\n... ary ' + (allResults.length - 25) + ' hafa.';
   }
 
   message += '\n\n📥 Hampiakatra hira rehetra? Tena izy!';
@@ -2461,6 +2512,7 @@ function showLoading(message) {
       z-index: 9999;
       box-shadow: 0 20px 60px rgba(0,0,0,0.8);
       text-align: center;
+      max-width: 90%;
     `;
     loading.innerHTML = `
       <div style="font-size:48px;margin-bottom:12px;">🎵</div>
@@ -2481,55 +2533,7 @@ function hideLoading() {
 }
 
 // -----------------------------------------------------------------
-// 9. BOKOTRA RECHERCHE
-// -----------------------------------------------------------------
-
-// Manampy bokotra Recherche eo akaikin'ny search bar
-const searchWrap = document.querySelector('.search-wrap');
-if (searchWrap) {
-  const btn = document.createElement('button');
-  btn.id = 'searchBtn';
-  btn.textContent = '🔍 Rechercher';
-  btn.style.cssText = `
-    background: #E8A33D;
-    border: none;
-    border-radius: 40px;
-    padding: 8px 18px;
-    color: #14110F;
-    font-weight: 700;
-    font-size: 13px;
-    cursor: pointer;
-    flex: none;
-    transition: 0.2s;
-  `;
-  btn.onmouseover = () => btn.style.background = '#f0b84d';
-  btn.onmouseout = () => btn.style.background = '#E8A33D';
-  searchWrap.appendChild(btn);
-}
-
-function setupSearchButton() {
-  const searchInput = document.querySelector('.search-wrap input, #searchInput');
-  const searchBtn = document.getElementById('searchBtn');
-
-  if (searchBtn) {
-    searchBtn.addEventListener('click', () => {
-      const query = searchInput ? searchInput.value : '';
-      searchAllMusic(query);
-    });
-  }
-
-  if (searchInput) {
-    searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        searchAllMusic(searchInput.value);
-      }
-    });
-  }
-}
-
-// -----------------------------------------------------------------
-// 10. BOKOTRA TÉLÉCHARGEMENT
+// 9. BOKOTRA TÉLÉCHARGEMENT
 // -----------------------------------------------------------------
 
 function addDownloadButtons() {
@@ -2630,34 +2634,43 @@ function addDownloadButtonsToList() {
 }
 
 // -----------------------------------------------------------------
-// 11. FANOMBANA
+// 10. FANOMBANA REHETRA
 // -----------------------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(() => {
-    setupSearchButton();
-    addDownloadButtons();
-  }, 300);
+  console.log('🎵 RHJ Player - Recherche + API');
 
+  // Manampy bokotra Recherche
+  setTimeout(() => {
+    addSearchButton();
+    addDownloadButtons();
+  }, 500);
+
+  // Raha tsy misy hira ao amin'ny bibliothèque
   setTimeout(() => {
     const library = JSON.parse(localStorage.getItem('rhj_library') || '[]');
     if (library.length === 0) {
-      console.log('🎵 Tsy misy hira ao amin\'ny bibliothèque');
+      console.log('📚 Tsy misy hira ao amin\'ny bibliothèque');
       console.log('🔍 Ampiasao ny bokotra "🔍 Rechercher" mba hikaroka hira');
+      console.log('💡 Andramo: jazz, piano, hira gasy, Jaojoby');
+    } else {
+      console.log('📚 Efa misy ' + library.length + ' hira ao amin\'ny bibliothèque');
     }
-  }, 1000);
+  }, 2000);
 });
 
 window.addEventListener('load', function() {
-  setTimeout(addDownloadButtonsToList, 800);
+  setTimeout(() => {
+    addSearchButton();
+    addDownloadButtonsToList();
+  }, 1000);
 });
 
-console.log('✅ RHJ Player - Multi API activé!');
+console.log('✅ RHJ Player - Recherche + API activé!');
 console.log('🔍 Ampiasao ny bokotra "🔍 Rechercher" mba hikaroka hira.');
-console.log('📥 API ampiasaina: Deezer, Spotify, SoundCloud, YouTube');
-console.log('💡 Andramo: jazz, piano, guitar, rock, pop, classical');
+console.log('💡 Andramo: jazz, piano, hira gasy, Jaojoby, salegy');
+console.log('📥 Tsindrio "⬇ Télécharger" mba hampiditra hira ao amin\'ny bibliothèque.');
 console.log('⚠️ Spotify, SoundCloud ary YouTube dia mila clé API vao miasa.');
-console.log('🔑 Apetraho eo amin\'ny code ny clé-tsakinao.');
 </script>
   
 </body>
