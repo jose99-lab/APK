@@ -2140,63 +2140,82 @@ if ('serviceWorker' in navigator) {
      ============================================================ -->
 
 <script>
-// ----- FAMPIDIRANA JAMENDO + TÉLÉCHARGEMENT -----
+// ============================================================
+// RHJ PLAYER - JAMENDO + FREE MUSIC ARCHIVE + DEMO TRACKS
+// ============================================================
 
 // -----------------------------------------------------------------
-// 1. AMPIANO BOKOTRA "🔍 RECHERCHER" sy "⬇ TÉLÉCHARGER" 
-//    eo amin'ny interface
+// 1. HIRA FANANDRAMANA (raha tsy mandeha ny API)
 // -----------------------------------------------------------------
 
-// Manampy bokotra Recherche eo akaikin'ny search bar
-const searchWrap = document.querySelector('.search-wrap');
-if (searchWrap) {
-  const btn = document.createElement('button');
-  btn.id = 'jamendoSearchBtn';
-  btn.textContent = '🔍';
-  btn.style.cssText = `
-    background: #E8A33D;
-    border: none;
-    border-radius: 40px;
-    padding: 6px 16px;
-    color: #14110F;
-    font-weight: 700;
-    font-size: 13px;
-    cursor: pointer;
-    flex: none;
-    transition: 0.2s;
-  `;
-  btn.onmouseover = () => btn.style.background = '#f0b84d';
-  btn.onmouseout = () => btn.style.background = '#E8A33D';
-  searchWrap.appendChild(btn);
-}
+const DEMO_TRACKS = [
+  {
+    id: 'demo_1',
+    title: 'Night Walk',
+    artist: 'RHJ Studio',
+    audio_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    duration: 210
+  },
+  {
+    id: 'demo_2',
+    title: 'Morning Light',
+    artist: 'RHJ Studio',
+    audio_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+    duration: 185
+  },
+  {
+    id: 'demo_3',
+    title: 'Ocean Waves',
+    artist: 'RHJ Studio',
+    audio_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+    duration: 240
+  },
+  {
+    id: 'demo_4',
+    title: 'Sunset Drive',
+    artist: 'RHJ Studio',
+    audio_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+    duration: 195
+  },
+  {
+    id: 'demo_5',
+    title: 'Urban Dreams',
+    artist: 'RHJ Studio',
+    audio_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+    duration: 225
+  }
+];
 
 // -----------------------------------------------------------------
-// 2. FAMPIDIRANA API JAMENDO (hikaroka hira CC-licensed)
+// 2. FIKAROHANA JAMENDO (misy fanandramana raha tsy mandeha)
 // -----------------------------------------------------------------
 
-// Fiasa hikaroka hira amin'ny alalan'ny API Jamendo
-// Soloy ny fiasa searchJamendo() amin'ity manaraka ity
 async function searchJamendo(query) {
   if (!query || query.trim() === '') {
-    alert('❌ Ampio teny fototra hikaroka (ohatra: "jazz", "piano")');
+    alert('❌ Ampio teny fototra hikaroka (ohatra: "jazz", "piano")\n\n🔍 Andramo: jazz, piano, guitar, rock, pop, classical');
     return;
   }
 
   const searchInput = document.querySelector('.search-wrap input');
   const originalQuery = searchInput ? searchInput.value : query;
 
+  // Mampiseho loading
+  showLoading('🔍 Mikaroka "' + originalQuery + '"...');
+
   try {
-    // 🔧 FANITSINA: Mampiasa API samihafa mba hahazoana vokatra betsaka
-    const url = `https://api.jamendo.com/v3.0/tracks/?client_id=4385f4d5&format=json&limit=50&search=${encodeURIComponent(originalQuery)}&order=popularity_total&tags=rock,pop,jazz,classical,electronic,acoustic`;
+    // API Jamendo
+    const url = `https://api.jamendo.com/v3.0/tracks/?client_id=4385f4d5&format=json&limit=30&search=${encodeURIComponent(originalQuery)}&order=popularity_total`;
 
     console.log('🔍 Mikaroka:', url);
     const response = await fetch(url);
     const data = await response.json();
 
-    console.log('📦 Valiny:', data);
+    console.log('📦 Valiny Jamendo:', data);
 
+    // Raha tsy misy valiny, mampiasa demo tracks
     if (!data.results || data.results.length === 0) {
-      alert('😕 Tsy nisy hira hita tamin\'ny teny "' + originalQuery + '".\n\nAndramo ireto teny ireto:\njazz, piano, guitar, rock, pop, classical, ambient, electronic, acoustic, folk, blues, reggae, hip hop, lofi');
+      hideLoading();
+      showDemoTracks(originalQuery);
       return;
     }
 
@@ -2219,9 +2238,12 @@ async function searchJamendo(query) {
 
     const choix = confirm(message + '\n\n✔️ OK = Hampiditra azy rehetra ao amin\'ny bibliothèque\n❌ Cancel = Tsy hampiditra');
 
-    if (!choix) return;
+    if (!choix) {
+      hideLoading();
+      return;
+    }
 
-    // Hampiditra hira rehetra ao amin'ny bibliothèque (localStorage)
+    // Hampiditra hira rehetra ao amin'ny bibliothèque
     let addedCount = 0;
     let library = JSON.parse(localStorage.getItem('rhj_library') || '[]');
 
@@ -2250,9 +2272,10 @@ async function searchJamendo(query) {
     });
 
     localStorage.setItem('rhj_library', JSON.stringify(library));
+    hideLoading();
 
     if (addedCount > 0) {
-      alert('✅ ' + addedCount + ' hira vaovao nampidirina tao amin\'ny bibliothèque!\n\n🔁 Avereno (reload) ny pejy mba hahitana azy ireo.\n\n🎵 Misy hira azonao halaina? Tsindrio "⬇ Télécharger" eo amin\'ny isaky ny hira.');
+      alert('✅ ' + addedCount + ' hira vaovao nampidirina tao amin\'ny bibliothèque!\n\n🔁 Avereno (reload) ny pejy mba hahitana azy ireo.');
       location.reload();
     } else {
       alert('⚠️ Efa tao amin\'ny bibliothèque daholo ireo hira ireo.');
@@ -2260,65 +2283,176 @@ async function searchJamendo(query) {
 
   } catch (error) {
     console.error('❌ Erreur API Jamendo:', error);
-    alert('❌ Tsy nahomby ny fikarohana.\n\nJereo ny fifandraisanao aterineto.\nRaha mbola tsy mandeha dia andramo amin\'ny teny toy ny: jazz, piano, guitar');
+    hideLoading();
+    // Raha tsy mandeha ny API, mampiasa demo tracks
+    showDemoTracks(originalQuery);
   }
-}
-
-// Fiasa hamoaka ny bibliothèque ankehitriny (hijery ny hira voatahiry)
-function getLibrary() {
-  try {
-    return JSON.parse(localStorage.getItem('rhj_library') || '[]');
-  } catch {
-    return [];
-  }
-}
-
-// Fiasa hanampy hira teléchargé ao amin'ny bibliothèque
-function addToLibrary(track) {
-  let library = getLibrary();
-  const exists = library.some(t => t.id === track.id);
-  if (!exists) {
-    library.push(track);
-    localStorage.setItem('rhj_library', JSON.stringify(library));
-    return true;
-  }
-  return false;
 }
 
 // -----------------------------------------------------------------
-// 3. MANAMPY BOKOTRA "⬇ Télécharger" ho an'ny hira rehetra
+// 3. HIRA FANANDRAMANA (rehefa tsy mandeha ny API)
 // -----------------------------------------------------------------
 
-// Manampy bokotra téléchargement eo amin'ny tsirairay hira
+function showDemoTracks(query) {
+  const message = '🎵 TSY MAHITA HIRA AHO TAMIN\'NY "' + query + '"\n\n' +
+                  '💡 Andramo ireto teny ireto:\n' +
+                  'jazz, piano, guitar, rock, pop, classical, ambient, electronic, acoustic, folk, blues, reggae, lofi\n\n' +
+                  '📥 Raha tianao dia afaka mampiditra hira fanandramana ianao:\n' +
+                  '🎵 Night Walk\n' +
+                  '🎵 Morning Light\n' +
+                  '🎵 Ocean Waves\n' +
+                  '🎵 Sunset Drive\n' +
+                  '🎵 Urban Dreams\n\n' +
+                  '✔️ OK = Hampiditra hira fanandramana (5 hira)\n' +
+                  '❌ Cancel = Tsy hampiditra';
+
+  const choix = confirm(message);
+
+  if (!choix) return;
+
+  let library = JSON.parse(localStorage.getItem('rhj_library') || '[]');
+  let addedCount = 0;
+
+  DEMO_TRACKS.forEach((track) => {
+    const exists = library.some(t => t.id === track.id);
+    if (!exists) {
+      library.push({
+        ...track,
+        downloaded: true,
+        license_cc: true,
+        source: 'demo'
+      });
+      addedCount++;
+    }
+  });
+
+  localStorage.setItem('rhj_library', JSON.stringify(library));
+
+  if (addedCount > 0) {
+    alert('✅ ' + addedCount + ' hira fanandramana nampidirina tao amin\'ny bibliothèque!\n\n🔁 Avereno (reload) ny pejy mba hahitana azy ireo.');
+    location.reload();
+  } else {
+    alert('⚠️ Efa tao amin\'ny bibliothèque daholo ireo hira ireo.');
+  }
+}
+
+// -----------------------------------------------------------------
+// 4. LOADING
+// -----------------------------------------------------------------
+
+function showLoading(message) {
+  let loading = document.getElementById('rhjLoading');
+  if (!loading) {
+    loading = document.createElement('div');
+    loading.id = 'rhjLoading';
+    loading.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(20, 17, 15, 0.95);
+      border: 1px solid #E8A33D;
+      border-radius: 16px;
+      padding: 30px 40px;
+      color: #F2EAD8;
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      z-index: 9999;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      text-align: center;
+    `;
+    loading.innerHTML = `
+      <div style="font-size:48px;margin-bottom:12px;">🎵</div>
+      <div id="rhjLoadingMessage">${message}</div>
+      <div style="margin-top:16px;font-size:12px;color:#8a8172;">⏳ Miandry kely...</div>
+    `;
+    document.body.appendChild(loading);
+  } else {
+    const msg = document.getElementById('rhjLoadingMessage');
+    if (msg) msg.textContent = message;
+    loading.style.display = 'block';
+  }
+}
+
+function hideLoading() {
+  const loading = document.getElementById('rhjLoading');
+  if (loading) loading.style.display = 'none';
+}
+
+// -----------------------------------------------------------------
+// 5. BOKOTRA RECHERCHE
+// -----------------------------------------------------------------
+
+// Manampy bokotra Recherche eo akaikin'ny search bar
+const searchWrap = document.querySelector('.search-wrap');
+if (searchWrap) {
+  const btn = document.createElement('button');
+  btn.id = 'jamendoSearchBtn';
+  btn.textContent = '🔍 Rechercher';
+  btn.style.cssText = `
+    background: #E8A33D;
+    border: none;
+    border-radius: 40px;
+    padding: 8px 18px;
+    color: #14110F;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    flex: none;
+    transition: 0.2s;
+  `;
+  btn.onmouseover = () => btn.style.background = '#f0b84d';
+  btn.onmouseout = () => btn.style.background = '#E8A33D';
+  searchWrap.appendChild(btn);
+}
+
+// Mametraka ny bokotra recherche
+function setupSearchButton() {
+  const searchInput = document.querySelector('.search-wrap input, #searchInput');
+  const searchBtn = document.getElementById('jamendoSearchBtn');
+
+  if (searchBtn) {
+    searchBtn.addEventListener('click', () => {
+      const query = searchInput ? searchInput.value : '';
+      searchJamendo(query);
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        searchJamendo(searchInput.value);
+      }
+    });
+  }
+}
+
+// -----------------------------------------------------------------
+// 6. BOKOTRA TÉLÉCHARGEMENT
+// -----------------------------------------------------------------
+
 function addDownloadButtons() {
-  // Mijery ny hira rehetra eo amin'ny bibliothèque
-  const library = getLibrary();
+  setTimeout(addDownloadButtonsToList, 500);
 
-  // Mampiasa setInterval hijery raha misy hira vaovao miseho
   const observer = new MutationObserver(() => {
     addDownloadButtonsToList();
   });
 
-  const trackList = document.querySelector('.track-list, #trackList, .playlist-tracks, ul.track-list');
+  const trackList = document.querySelector('.track-list, #trackList, ul.track-list');
   if (trackList) {
     observer.observe(trackList, { childList: true, subtree: true });
   }
-
-  // Manampy amin'ny hira efa misy
-  setTimeout(addDownloadButtonsToList, 500);
 }
 
 function addDownloadButtonsToList() {
-  // Mijery ny lisitra rehetra
-  const lists = document.querySelectorAll('.track-list, #trackList, ul.track-list, .playlist-tracks');
+  const lists = document.querySelectorAll('.track-list, #trackList, ul.track-list');
 
   lists.forEach(list => {
     const items = list.querySelectorAll('li.track-row, li');
-    items.forEach((item, index) => {
-      // Tsy ampiana indroa
+    items.forEach((item) => {
       if (item.querySelector('.btn-download-jamendo')) return;
 
-      // Mitady ny anaran'ny hira
       const nameEl = item.querySelector('.track-meta .name, .name, .track-title');
       const artistEl = item.querySelector('.track-meta .size, .artist, .track-artist');
 
@@ -2327,7 +2461,6 @@ function addDownloadButtonsToList() {
       const title = nameEl.textContent.trim();
       const artist = artistEl ? artistEl.textContent.trim() : 'Artiste tsy fantatra';
 
-      // Manamboatra bokotra Download
       const dlBtn = document.createElement('button');
       dlBtn.className = 'btn-download-jamendo';
       dlBtn.textContent = '⬇ Télécharger';
@@ -2347,12 +2480,10 @@ function addDownloadButtonsToList() {
       dlBtn.onmouseover = () => dlBtn.style.background = '#3b9b62';
       dlBtn.onmouseout = () => dlBtn.style.background = '#2d7a4b';
 
-      // Rehefa kitihina dia telecharger
       dlBtn.addEventListener('click', (e) => {
         e.stopPropagation();
 
-        // Mijery raha efa voatahiry
-        const library = getLibrary();
+        const library = JSON.parse(localStorage.getItem('rhj_library') || '[]');
         const exists = library.some(t => t.title === title && t.artist === artist);
 
         if (exists) {
@@ -2363,7 +2494,6 @@ function addDownloadButtonsToList() {
           return;
         }
 
-        // Mamorona hira vaovao
         const newTrack = {
           id: 'manual_' + Date.now(),
           title: title,
@@ -2389,12 +2519,10 @@ function addDownloadButtonsToList() {
         alert('✅ "' + title + '" télégécharinina ao amin\'ny bibliothèque!');
       });
 
-      // Ampidirina eo amin'ny item
       const actions = item.querySelector('.track-actions, .meta-actions');
       if (actions) {
         actions.appendChild(dlBtn);
       } else {
-        // Raha tsy misy actions, ampiana amin'ny farany
         item.appendChild(dlBtn);
       }
     });
@@ -2402,70 +2530,48 @@ function addDownloadButtonsToList() {
 }
 
 // -----------------------------------------------------------------
-// 4. MAMPIDITRA BOKOTRA "🔍" Eo amin'ny search bar
-// -----------------------------------------------------------------
-
-// Mametraka ny bokotra recherche eo amin'ny search
-function setupSearchButton() {
-  const searchInput = document.querySelector('.search-wrap input, #searchInput');
-  const searchBtn = document.querySelector('#jamendoSearchBtn');
-
-  if (searchBtn) {
-    searchBtn.addEventListener('click', () => {
-      const query = searchInput ? searchInput.value : '';
-      searchJamendo(query);
-    });
-  }
-
-  // Rehefa tsindriana Enter
-  if (searchInput) {
-    searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        searchJamendo(searchInput.value);
-      }
-    });
-  }
-}
-
-// -----------------------------------------------------------------
-// 5. FANAMPINY REHETRA REHEFA VITA NY LOAD
+// 7. FANOMBANA
 // -----------------------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Miandry kely vao manampy ny bokotra
   setTimeout(() => {
     setupSearchButton();
     addDownloadButtons();
   }, 300);
+
+  // Raha tsy misy hira ao amin'ny bibliothèque, manolotra hira fanandramana
+  setTimeout(() => {
+    const library = JSON.parse(localStorage.getItem('rhj_library') || '[]');
+    if (library.length === 0) {
+      const choix = confirm('🎵 TSY MISY HIRA AO AMIN\'NY BIBLIOTHÈQUE\n\n' +
+                            '📥 Tianao ve ny mampiditra hira fanandramana (5 hira) ao amin\'ny bibliothèque?\n\n' +
+                            '✔️ OK = Hampiditra hira fanandramana\n' +
+                            '❌ Cancel = Tsy hampiditra');
+      if (choix) {
+        let lib = [];
+        DEMO_TRACKS.forEach((track) => {
+          lib.push({
+            ...track,
+            downloaded: true,
+            license_cc: true,
+            source: 'demo'
+          });
+        });
+        localStorage.setItem('rhj_library', JSON.stringify(lib));
+        alert('✅ 5 hira fanandramana nampidirina!\n\n🔁 Avereno (reload) ny pejy.');
+        location.reload();
+      }
+    }
+  }, 2000);
 });
 
-// -----------------------------------------------------------------
-// 6. FANAMPINY HO AN'NY HIRA EFA MISY (reload)
-// -----------------------------------------------------------------
-
-// Manampy bokotra Download amin'ny hira efa misy
 window.addEventListener('load', function() {
   setTimeout(addDownloadButtonsToList, 800);
 });
 
-// Manara-maso ny fiovan'ny lisitra
-const listObserver = new MutationObserver(() => {
-  addDownloadButtonsToList();
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(() => {
-    const lists = document.querySelectorAll('.track-list, #trackList, ul.track-list');
-    lists.forEach(list => {
-      listObserver.observe(list, { childList: true, subtree: true });
-    });
-  }, 1000);
-});
-
-console.log('✅ RHJ Jamendo + Téléchargement activé!');
-console.log('🔍 Ampiasao ny bokotra 🔍 eo amin\'ny search bar mba hikaroka hira CC-licensed.');
-console.log('📥 Rehefa hita dia tsindrio "⬇ Télécharger" mba hampiditra azy ao amin\'ny bibliothèque.');
+console.log('✅ RHJ Jamendo + Demo Tracks + Téléchargement activé!');
+console.log('🔍 Ampiasao ny bokotra "🔍 Rechercher" mba hikaroka hira.');
+console.log('📥 Raha tsy mandeha ny API dia mampiasa hira fanandramana ny programa.');
 </script>
   
 </body>
