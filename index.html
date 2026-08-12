@@ -2125,6 +2125,542 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+
+
+
+
+  <script>
+// ============================================================
+// RHJ PLAYER - RECHERCHE + API + HIRA MALAGASY
+// ============================================================
+
+// -----------------------------------------------------------------
+// 1. CONFIGURATION API - AMPIDIRO ETO NY CLÉ-NAO
+// -----------------------------------------------------------------
+
+// 🔑 Spotify (mila clé)
+const SPOTIFY_CLIENT_ID = 'f1aa6073470147da806adeda8f52e435'; // Apetraho eo ny Client ID
+const SPOTIFY_CLIENT_SECRET = '6cd8bac34e8d4dd0b1cabd33423f3cdb'; // Apetraho eo ny Client Secret
+
+// 🔑 SoundCloud (mila clé)
+const SOUNDCLOUD_CLIENT_ID = ''; // Apetraho eo ny Client ID
+
+// 🔑 YouTube (mila clé)
+const YOUTUBE_API_KEY = ''; // Apetraho eo ny API Key
+
+// -----------------------------------------------------------------
+// 2. FANAMPINA BOKOTRA RECHERCHE
+// -----------------------------------------------------------------
+
+// Manampy bokotra Recherche eo akaikin'ny search bar
+function addSearchButton() {
+  const searchWrap = document.querySelector('.search-wrap');
+  if (!searchWrap) {
+    console.log('⚠️ Tsy hita ny search-wrap');
+    return;
+  }
+
+  // Raha efa misy dia tsy ampiana indray
+  if (document.getElementById('searchBtn')) return;
+
+  const btn = document.createElement('button');
+  btn.id = 'searchBtn';
+  btn.textContent = '🔍 Rechercher';
+  btn.style.cssText = `
+    background: #E8A33D;
+    border: none;
+    border-radius: 40px;
+    padding: 8px 18px;
+    color: #14110F;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    flex: none;
+    transition: 0.2s;
+  `;
+  btn.onmouseover = () => btn.style.background = '#f0b84d';
+  btn.onmouseout = () => btn.style.background = '#E8A33D';
+
+  // Manala ny bokotra taloha raha misy
+  const oldBtn = searchWrap.querySelector('#searchBtn');
+  if (oldBtn) oldBtn.remove();
+
+  searchWrap.appendChild(btn);
+  console.log('✅ Bokotra Recherche nampidirina');
+
+  // Mametraka ny fiasa
+  const searchInput = document.querySelector('.search-wrap input, #searchInput');
+  
+  btn.addEventListener('click', () => {
+    const query = searchInput ? searchInput.value : '';
+    if (query.trim()) {
+      searchAllMusic(query);
+    } else {
+      alert('❌ Ampio teny fototra hikaroka\n\n💡 Andramo: jazz, piano, hira gasy, Jaojoby');
+    }
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const query = searchInput.value;
+        if (query.trim()) {
+          searchAllMusic(query);
+        }
+      }
+    });
+  }
+}
+
+// -----------------------------------------------------------------
+// 3. FIKAROHANA DEEZER (tsy mila clé)
+// -----------------------------------------------------------------
+
+async function searchDeezer(query) {
+  if (!query || query.trim() === '') return null;
+
+  try {
+    const url = `https://api.deezer.com/search/track?q=${encodeURIComponent(query)}&limit=25`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.data || data.data.length === 0) return null;
+
+    return data.data.map(track => ({
+      id: 'deezer_' + track.id,
+      title: track.title || 'Tsy misy lohateny',
+      artist: track.artist.name || 'Artiste tsy fantatra',
+      audio_url: track.preview || '',
+      duration: track.duration || 0,
+      album: track.album.title || 'Album tsy fantatra',
+      cover: track.album.cover_medium || '',
+      source: 'Deezer',
+      license_cc: false,
+      downloaded: false
+    }));
+  } catch (error) {
+    console.error('❌ Deezer error:', error);
+    return null;
+  }
+}
+
+// -----------------------------------------------------------------
+// 4. FIKAROHANA SPOTIFY (mila clé)
+// -----------------------------------------------------------------
+
+async function getSpotifyToken() {
+  if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
+    console.warn('⚠️ Tsy misy Spotify Client ID na Secret');
+    return null;
+  }
+
+  try {
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + btoa(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET)
+      },
+      body: 'grant_type=client_credentials'
+    });
+    const data = await response.json();
+    return data.access_token || null;
+  } catch (error) {
+    console.error('❌ Spotify token error:', error);
+    return null;
+  }
+}
+
+async function searchSpotify(query) {
+  if (!query || query.trim() === '') return null;
+
+  const token = await getSpotifyToken();
+  if (!token) return null;
+
+  try {
+    const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=25`;
+    const response = await fetch(url, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await response.json();
+
+    if (!data.tracks || !data.tracks.items || data.tracks.items.length === 0) return null;
+
+    return data.tracks.items.map(track => ({
+      id: 'spotify_' + track.id,
+      title: track.name || 'Tsy misy lohateny',
+      artist: track.artists.map(a => a.name).join(', ') || 'Artiste tsy fantatra',
+      audio_url: track.preview_url || '',
+      duration: Math.floor(track.duration_ms / 1000) || 0,
+      album: track.album.name || 'Album tsy fantatra',
+      cover: track.album.images && track.album.images.length > 0 ? track.album.images[0].url : '',
+      source: 'Spotify',
+      license_cc: false,
+      downloaded: false
+    }));
+  } catch (error) {
+    console.error('❌ Spotify error:', error);
+    return null;
+  }
+}
+
+// -----------------------------------------------------------------
+// 5. FIKAROHANA SOUNDCLOUD (mila clé)
+// -----------------------------------------------------------------
+
+async function searchSoundCloud(query) {
+  if (!query || query.trim() === '') return null;
+  if (!SOUNDCLOUD_CLIENT_ID) {
+    console.warn('⚠️ Tsy misy SoundCloud Client ID');
+    return null;
+  }
+
+  try {
+    const url = `https://api.soundcloud.com/tracks?q=${encodeURIComponent(query)}&client_id=${SOUNDCLOUD_CLIENT_ID}&limit=25`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data || data.length === 0) return null;
+
+    return data.map(track => ({
+      id: 'soundcloud_' + track.id,
+      title: track.title || 'Tsy misy lohateny',
+      artist: track.user.username || 'Artiste tsy fantatra',
+      audio_url: track.stream_url + '?client_id=' + SOUNDCLOUD_CLIENT_ID,
+      duration: Math.floor(track.duration / 1000) || 0,
+      album: 'SoundCloud',
+      cover: track.artwork_url || track.user.avatar_url || '',
+      source: 'SoundCloud',
+      license_cc: false,
+      downloaded: false
+    }));
+  } catch (error) {
+    console.error('❌ SoundCloud error:', error);
+    return null;
+  }
+}
+
+// -----------------------------------------------------------------
+// 6. FIKAROHANA YOUTUBE (mila clé)
+// -----------------------------------------------------------------
+
+async function searchYouTube(query) {
+  if (!query || query.trim() === '') return null;
+  if (!YOUTUBE_API_KEY) {
+    console.warn('⚠️ Tsy misy YouTube API Key');
+    return null;
+  }
+
+  try {
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&q=${encodeURIComponent(query + ' music')}&key=${YOUTUBE_API_KEY}&maxResults=15`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.items || data.items.length === 0) return null;
+
+    return data.items.map(item => ({
+      id: 'youtube_' + item.id.videoId,
+      title: item.snippet.title || 'Tsy misy lohateny',
+      artist: item.snippet.channelTitle || 'Artiste tsy fantatra',
+      audio_url: '', // Tsy misy audio URL mivantana
+      duration: 0,
+      album: 'YouTube',
+      cover: item.snippet.thumbnails.medium.url || '',
+      source: 'YouTube',
+      license_cc: false,
+      downloaded: false,
+      youtube_id: item.id.videoId
+    }));
+  } catch (error) {
+    console.error('❌ YouTube error:', error);
+    return null;
+  }
+}
+
+// -----------------------------------------------------------------
+// 7. FIKAROHANA REHETRA
+// -----------------------------------------------------------------
+
+async function searchAllMusic(query) {
+  if (!query || query.trim() === '') {
+    alert('❌ Ampio teny fototra hikaroka\n\n💡 Andramo:\n- jazz, piano, guitar\n- hira gasy, Jaojoby\n- salegy, tsapiky');
+    return;
+  }
+
+  showLoading('🔍 Mikaroka "' + query + '" amin\'ny API rehetra...');
+
+  let allResults = [];
+  let sources = [];
+
+  // 1. Deezer (tsy mila clé)
+  const deezerResults = await searchDeezer(query);
+  if (deezerResults && deezerResults.length > 0) {
+    allResults = allResults.concat(deezerResults);
+    sources.push('Deezer');
+  }
+
+  // 2. Spotify (mila clé)
+  const spotifyResults = await searchSpotify(query);
+  if (spotifyResults && spotifyResults.length > 0) {
+    allResults = allResults.concat(spotifyResults);
+    sources.push('Spotify');
+  }
+
+  // 3. SoundCloud (mila clé)
+  const soundcloudResults = await searchSoundCloud(query);
+  if (soundcloudResults && soundcloudResults.length > 0) {
+    allResults = allResults.concat(soundcloudResults);
+    sources.push('SoundCloud');
+  }
+
+  // 4. YouTube (mila clé)
+  const youtubeResults = await searchYouTube(query);
+  if (youtubeResults && youtubeResults.length > 0) {
+    allResults = allResults.concat(youtubeResults);
+    sources.push('YouTube');
+  }
+
+  hideLoading();
+
+  if (allResults.length === 0) {
+    alert('😕 Tsy nisy hira hita tamin\'ny "' + query + '".\n\n' +
+          '💡 Andramo teny hafa:\n' +
+          '• jazz, piano, guitar, rock, pop\n' +
+          '• hira gasy, Jaojoby, Rossy\n' +
+          '• salegy, tsapiky, basesa\n\n' +
+          '⚠️ Spotify, SoundCloud ary YouTube dia mila clé API vao miasa.');
+    return;
+  }
+
+  // Mampiseho valiny
+  let message = '🎵 HIRA HITA (' + allResults.length + ')\n';
+  message += '📡 Avy amin\'ny: ' + sources.join(', ') + '\n\n';
+
+  allResults.slice(0, 25).forEach((track, index) => {
+    const duration = track.duration ? Math.floor(track.duration / 60) + ':' + String(Math.floor(track.duration % 60)).padStart(2, '0') : '--:--';
+    const sourceIcon = track.source === 'Deezer' ? '🎵' : 
+                       track.source === 'Spotify' ? '🟢' : 
+                       track.source === 'SoundCloud' ? '☁️' : '▶️';
+    message += (index + 1) + '. ' + sourceIcon + ' ' + track.title + ' — ' + track.artist + ' (' + duration + ')\n';
+  });
+
+  if (allResults.length > 25) {
+    message += '\n... ary ' + (allResults.length - 25) + ' hafa.';
+  }
+
+  message += '\n\n📥 Hampiakatra hira rehetra? Tena izy!';
+
+  const choix = confirm(message + '\n\n✔️ OK = Hampiditra azy rehetra\n❌ Cancel = Tsy hampiditra');
+
+  if (!choix) return;
+
+  let addedCount = 0;
+  let library = JSON.parse(localStorage.getItem('rhj_library') || '[]');
+
+  allResults.forEach((track) => {
+    const exists = library.some(t => t.id === track.id);
+    if (!exists) {
+      library.push(track);
+      addedCount++;
+    }
+  });
+
+  localStorage.setItem('rhj_library', JSON.stringify(library));
+
+  if (addedCount > 0) {
+    alert('✅ ' + addedCount + ' hira vaovao nampidirina!\n\n🔁 Avereno (reload) ny pejy mba hahitana azy ireo.');
+    location.reload();
+  } else {
+    alert('⚠️ Efa tao amin\'ny bibliothèque daholo ireo hira ireo.');
+  }
+}
+
+// -----------------------------------------------------------------
+// 8. LOADING
+// -----------------------------------------------------------------
+
+function showLoading(message) {
+  let loading = document.getElementById('rhjLoading');
+  if (!loading) {
+    loading = document.createElement('div');
+    loading.id = 'rhjLoading';
+    loading.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(20, 17, 15, 0.95);
+      border: 1px solid #E8A33D;
+      border-radius: 16px;
+      padding: 30px 40px;
+      color: #F2EAD8;
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      z-index: 9999;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      text-align: center;
+      max-width: 90%;
+    `;
+    loading.innerHTML = `
+      <div style="font-size:48px;margin-bottom:12px;">🎵</div>
+      <div id="rhjLoadingMessage">${message}</div>
+      <div style="margin-top:16px;font-size:12px;color:#8a8172;">⏳ Miandry kely...</div>
+    `;
+    document.body.appendChild(loading);
+  } else {
+    const msg = document.getElementById('rhjLoadingMessage');
+    if (msg) msg.textContent = message;
+    loading.style.display = 'block';
+  }
+}
+
+function hideLoading() {
+  const loading = document.getElementById('rhjLoading');
+  if (loading) loading.style.display = 'none';
+}
+
+// -----------------------------------------------------------------
+// 9. BOKOTRA TÉLÉCHARGEMENT
+// -----------------------------------------------------------------
+
+function addDownloadButtons() {
+  setTimeout(addDownloadButtonsToList, 500);
+
+  const observer = new MutationObserver(() => {
+    addDownloadButtonsToList();
+  });
+
+  const trackList = document.querySelector('.track-list, #trackList, ul.track-list');
+  if (trackList) {
+    observer.observe(trackList, { childList: true, subtree: true });
+  }
+}
+
+function addDownloadButtonsToList() {
+  const lists = document.querySelectorAll('.track-list, #trackList, ul.track-list');
+
+  lists.forEach(list => {
+    const items = list.querySelectorAll('li.track-row, li');
+    items.forEach((item) => {
+      if (item.querySelector('.btn-download')) return;
+
+      const nameEl = item.querySelector('.track-meta .name, .name, .track-title');
+      const artistEl = item.querySelector('.track-meta .size, .artist, .track-artist');
+
+      if (!nameEl) return;
+
+      const title = nameEl.textContent.trim();
+      const artist = artistEl ? artistEl.textContent.trim() : 'Artiste tsy fantatra';
+
+      const dlBtn = document.createElement('button');
+      dlBtn.className = 'btn-download';
+      dlBtn.textContent = '⬇ Télécharger';
+      dlBtn.style.cssText = `
+        background: #2d7a4b;
+        border: none;
+        border-radius: 30px;
+        padding: 4px 14px;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-left: 8px;
+        transition: 0.2s;
+        flex: none;
+      `;
+      dlBtn.onmouseover = () => dlBtn.style.background = '#3b9b62';
+      dlBtn.onmouseout = () => dlBtn.style.background = '#2d7a4b';
+
+      dlBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+
+        const library = JSON.parse(localStorage.getItem('rhj_library') || '[]');
+        const exists = library.some(t => t.title === title && t.artist === artist);
+
+        if (exists) {
+          alert('✅ Efa ao amin\'ny bibliothèque ity hira ity!');
+          dlBtn.textContent = '✓ Téléchargé';
+          dlBtn.style.background = '#555';
+          dlBtn.disabled = true;
+          return;
+        }
+
+        const newTrack = {
+          id: 'manual_' + Date.now(),
+          title: title,
+          artist: artist,
+          name: title,
+          artist_name: artist,
+          audio_url: '',
+          url: '',
+          preview: '',
+          downloaded: true,
+          license_cc: false,
+          source: 'Telechargé',
+          album: 'Hira telechargée'
+        };
+
+        library.push(newTrack);
+        localStorage.setItem('rhj_library', JSON.stringify(library));
+
+        dlBtn.textContent = '✓ Téléchargé';
+        dlBtn.style.background = '#555';
+        dlBtn.disabled = true;
+
+        alert('✅ "' + title + '" télégécharinina ao amin\'ny bibliothèque!');
+      });
+
+      const actions = item.querySelector('.track-actions, .meta-actions');
+      if (actions) {
+        actions.appendChild(dlBtn);
+      } else {
+        item.appendChild(dlBtn);
+      }
+    });
+  });
+}
+
+// -----------------------------------------------------------------
+// 10. FANOMBANA REHETRA
+// -----------------------------------------------------------------
+
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🎵 RHJ Player - Recherche + API');
+
+  // Manampy bokotra Recherche
+  setTimeout(() => {
+    addSearchButton();
+    addDownloadButtons();
+  }, 500);
+
+  // Raha tsy misy hira ao amin'ny bibliothèque
+  setTimeout(() => {
+    const library = JSON.parse(localStorage.getItem('rhj_library') || '[]');
+    if (library.length === 0) {
+      console.log('📚 Tsy misy hira ao amin\'ny bibliothèque');
+      console.log('🔍 Ampiasao ny bokotra "🔍 Rechercher" mba hikaroka hira');
+      console.log('💡 Andramo: jazz, piano, hira gasy, Jaojoby');
+    } else {
+      console.log('📚 Efa misy ' + library.length + ' hira ao amin\'ny bibliothèque');
+    }
+  }, 2000);
+});
+
+window.addEventListener('load', function() {
+  setTimeout(() => {
+    addSearchButton();
+    addDownloadButtonsToList();
+  }, 1000);
+});
+
+console.log('✅ RHJ Player - Recherche + API activé!');
+console.log('🔍 Ampiasao ny bokotra "🔍 Rechercher" mba hikaroka hira.');
+console.log('💡 Andramo: jazz, piano, hira gasy, Jaojoby, salegy');
+console.log('📥 Tsindrio "⬇ Télécharger" mba hampiditra hira ao amin\'ny bibliothèque.');
+console.log('⚠️ Spotify, SoundCloud ary YouTube dia mila clé API vao miasa.');
+</script>
   
 </body>
 </html>
