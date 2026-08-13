@@ -934,10 +934,12 @@
         </button>
       </div>
 
-      <button class="add-btn" id="connectFolderQuickBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        Connecter le dossier musique du téléphone
+      <!-- 🔥 NOUVEAU BOUTON SCAN ANDROID -->
+      <button class="add-btn" id="scanMusicBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        🔍 Scanner les morceaux du téléphone
       </button>
+
       <button class="add-btn" id="addBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Ajouter des morceaux (MP3, WAV, M4A…)
@@ -945,7 +947,7 @@
       <input type="file" id="fileInput" accept="audio/*" multiple>
 
       <ul class="track-list" id="trackList"></ul>
-      <div class="empty" id="emptyState">Votre bibliothèque est vide.<br>Connectez le dossier musique de votre téléphone, ou ajoutez des morceaux manuellement.</div>
+      <div class="empty" id="emptyState">Votre bibliothèque est vide.<br>Appuyez sur « Scanner les morceaux » pour importer toute votre musique.</div>
     </div>
 
     <p class="foot-note">Vos morceaux sont enregistrés uniquement sur cet appareil.<br>Aucun fichier n'est envoyé sur internet.</p>
@@ -1655,7 +1657,7 @@ function renderList(){
 
   if (!playlist.length){
     el.emptyState.style.display = 'block';
-    el.emptyState.innerHTML = 'Votre bibliothèque est vide.<br>Ajoutez vos premiers morceaux ci-dessus.';
+    el.emptyState.innerHTML = 'Votre bibliothèque est vide.<br>Appuyez sur « Scanner les morceaux » ci-dessus.';
   } else if (filtered.length === 0){
     el.emptyState.style.display = 'block';
     el.emptyState.innerHTML = query
@@ -1732,9 +1734,19 @@ function loadTrack(index, autoplay){
   if (index < 0 || index >= playlist.length) return;
   currentIndex = index;
   const t = playlist[index];
-  if (objectUrl) URL.revokeObjectURL(objectUrl);
-  objectUrl = URL.createObjectURL(t.blob);
-  audio.src = objectUrl;
+  
+  // --- Gestion des sources Android (URI) ---
+  if (t.source === 'android' && t.playableUrl) {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    audio.src = t.playableUrl;
+  } else if (t.blob) {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(t.blob);
+    audio.src = objectUrl;
+  } else {
+    return; // pas de source valide
+  }
+  
   el.title.textContent = tTitle(t);
   el.artist.textContent = tArtist(t);
   renderList();
@@ -1971,6 +1983,98 @@ el.fileInput.addEventListener('change', async (e) => {
     el.title.textContent = tTitle(t);
     el.artist.textContent = tArtist(t);
     renderList();
+  }
+});
+
+/* ============================================================
+   ANDROID WEBVIEW BRIDGE - SCANNER LA MUSIQUE DU TÉLÉPHONE
+   ============================================================ */
+let isScanning = false;
+
+// Callback appelé par le Java avec la liste des pistes (JSON)
+window.onMusicScanned = function(jsonResult) {
+  try {
+    const tracks = JSON.parse(jsonResult);
+    if (!tracks || !tracks.length) {
+      alert("Tsy nahita hira ao amin'ny fitaovanao. Mety tsy misy MP3, WAV, M4A, etc.");
+      return;
+    }
+
+    let added = 0;
+    for (const item of tracks) {
+      if (!item.path) continue;
+      const title = item.title || item.name.replace(/\.[^/.]+$/, '');
+      const artist = item.artist || null;
+      const album = item.album || null;
+      
+      // Raha misy interface Java, mahazo ny URL azo lalaovina (content://)
+      const playableUrl = (window.AndroidInterface && typeof window.AndroidInterface.getPlayableUrl === 'function') 
+        ? window.AndroidInterface.getPlayableUrl(item.path) 
+        : null;
+
+      // Ampidirina ao amin'ny playlist (source: android)
+      playlist.push({
+        id: 'android:' + item.path,
+        name: item.name,
+        size: parseInt(item.size) || 0,
+        blob: null,  // tsy ilaina fa ampiasaina ny URI
+        title: title,
+        artist: artist,
+        album: album,
+        source: 'android',
+        uri: item.path,
+        playableUrl: playableUrl // URL azo lalaovina (content://)
+      });
+      added++;
+    }
+
+    renderList();
+    alert(added + ' morceau(x) trouvé(s) !');
+  } catch (e) {
+    console.error('Erreur lors du scan:', e);
+    alert('Erreur lors du scan : ' + e.message);
+  }
+  isScanning = false;
+};
+
+// Fonction pour ajouter une piste individuelle (appelée par le Java si besoin)
+window.addTrackFromAndroid = function(path, name, size, mimeType, title, artist, album) {
+  const finalTitle = title || name.replace(/\.[^/.]+$/, '');
+  const playableUrl = (window.AndroidInterface && typeof window.AndroidInterface.getPlayableUrl === 'function') 
+    ? window.AndroidInterface.getPlayableUrl(path) 
+    : null;
+
+  playlist.push({
+    id: 'android:' + path,
+    name: name,
+    size: parseInt(size) || 0,
+    blob: null,
+    title: finalTitle,
+    artist: artist || null,
+    album: album || null,
+    source: 'android',
+    uri: path,
+    playableUrl: playableUrl
+  });
+  renderList();
+};
+
+// Bouton "Scanner les morceaux"
+document.getElementById('scanMusicBtn').addEventListener('click', function() {
+  if (isScanning) return;
+  isScanning = true;
+  
+  // Vérifie si l'interface Java est disponible
+  if (window.AndroidInterface && typeof window.AndroidInterface.scanMusic === 'function') {
+    window.AndroidInterface.scanMusic();
+  } else {
+    // Fallback : utilisation du File System Access API (sur PC)
+    if (supportsFS) {
+      connectMusicFolder();
+    } else {
+      alert("Tsy mihazakazaka ao anaty WebView ity app ity. Ampiasao amin'ny APK.");
+    }
+    isScanning = false;
   }
 });
 
