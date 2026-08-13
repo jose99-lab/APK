@@ -934,6 +934,27 @@
         </button>
       </div>
 
+<!-- Soloy io andalana io (eo ambanin'ny filter-chip) -->
+<div id="folderListContainer" style="margin-bottom:12px;">
+  <div id="folderList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;"></div>
+  <div id="folderStatus" style="font-size:12px;color:var(--muted);">Aucun dossier sélectionné</div>
+</div>
+
+<button class="add-btn" id="addFolderBtn">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+  Ajouter un dossier
+</button>
+
+<!-- Esory na afeno ny "Connecter le dossier musique du téléphone" sy "Ajouter des morceaux" raha tsy ilaina, fa avelao fotsiny ny "Ajouter des morceaux" ho solon'ny fampidirana hira tsy folder -->
+
+
+
+      
+
+
+
+
+      
       <button class="add-btn" id="connectFolderQuickBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         Connecter le dossier musique du téléphone
@@ -2322,6 +2343,147 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
+
+
+
+
+
+
+
+
+
+// ============================================================
+// MULTI-FOLDER SELECTION (File System Access API)
+// ============================================================
+let folderHandles = []; // Lista misy ny handles rehetra
+let folderScanning = false;
+
+async function addFolder() {
+  if (!supportsFS) {
+    alert("Votre navigateur ne supporte pas la sélection de dossier.");
+    return;
+  }
+  try {
+    const handle = await window.showDirectoryPicker();
+    const perm = await handle.requestPermission({ mode: 'read' });
+    if (perm === 'granted') {
+      folderHandles.push(handle);
+      renderFolderStatus();
+      await scanAllFolders();
+    }
+  } catch (e) {
+    // Nohafoanin'ny mpampiasa
+  }
+}
+
+async function removeFolder(index) {
+  if (index < 0 || index >= folderHandles.length) return;
+  folderHandles.splice(index, 1);
+  renderFolderStatus();
+  await scanAllFolders();
+}
+
+async function scanAllFolders() {
+  if (folderScanning) return;
+  folderScanning = true;
+  // Esorina ny hira rehetra avy amin'ny folder (mba havaozina)
+  playlist = playlist.filter(t => t.source !== 'folder');
+
+  const found = [];
+  for (const handle of folderHandles) {
+    await walkDirectory(handle, '', found, 0);
+  }
+
+  for (const f of found) {
+    let file;
+    try {
+      file = await f.handle.getFile();
+    } catch (e) {
+      continue;
+    }
+    let tags = null;
+    if (/\.mp3$/i.test(f.name)) tags = await parseID3(file);
+    const guess = guessFromFilename(f.name);
+    const title = (tags && tags.title) || guess.title || niceName(f.name);
+    const artist = (tags && tags.artist) || guess.artist || null;
+    const album = (tags && tags.album) || null;
+    playlist.push({
+      id: 'f:' + f.path,
+      name: f.name,
+      size: file.size,
+      blob: file,
+      title, artist, album,
+      source: 'folder'
+    });
+  }
+
+  folderScanning = false;
+  renderList();
+  renderFolderStatus();
+}
+
+function renderFolderStatus() {
+  const count = folderHandles.length;
+  const statusEl = document.getElementById('folderStatus');
+  const listEl = document.getElementById('folderList');
+  
+  if (count === 0) {
+    statusEl.textContent = 'Aucun dossier sélectionné';
+    listEl.innerHTML = '';
+    return;
+  }
+
+  statusEl.textContent = count + ' dossier' + (count > 1 ? 's' : '') + ' sélectionné' + (count > 1 ? 's' : '');
+
+  listEl.innerHTML = folderHandles.map((h, i) => `
+    <span style="background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 10px 4px 14px;font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+      📁 ${h.name}
+      <button data-index="${i}" class="remove-folder-btn" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;font-size:14px;">✕</button>
+    </span>
+  `).join('');
+
+  listEl.querySelectorAll('.remove-folder-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const idx = parseInt(e.currentTarget.dataset.index);
+      await removeFolder(idx);
+    });
+  });
+}
+
+// Ampidiro ny event listener ho an'ny bokotra "Ajouter un dossier"
+// Raha mbola misy ny "connectFolderBtn" dia esory ny listener taloha, na ovay ho addFolder
+const addFolderBtn = document.getElementById('addFolderBtn');
+if (addFolderBtn) {
+  addFolderBtn.addEventListener('click', addFolder);
+}
+// Raha tiana ny hanolo ny "Connecter le dossier musique du téléphone" dia esory ny listener taloha:
+const oldConnectBtn = document.getElementById('connectFolderBtn');
+if (oldConnectBtn) {
+  // Esory ny listener taloha (atao clone replacement)
+  const newBtn = oldConnectBtn.cloneNode(true);
+  oldConnectBtn.parentNode.replaceChild(newBtn, oldConnectBtn);
+  newBtn.addEventListener('click', addFolder);
+  newBtn.textContent = 'Ajouter un dossier';
+}
+// Mitovy amin'ny quick btn
+const oldQuickBtn = document.getElementById('connectFolderQuickBtn');
+if (oldQuickBtn) {
+  const newQuickBtn = oldQuickBtn.cloneNode(true);
+  oldQuickBtn.parentNode.replaceChild(newQuickBtn, oldQuickBtn);
+  newQuickBtn.addEventListener('click', addFolder);
+  newQuickBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Ajouter un dossier';
+}
+
+// Atao hoe tsy ilaina intsony ny trySilentFolderLoad (esory na avelao fa tsy hisy vokany)
+// Ovaina kely ny renderFolderStatus mba tsy hampiseho ny "Non connecté"
+
+
+
+
+
+
+
+  
 </script>
 
   
