@@ -934,14 +934,16 @@
         </button>
       </div>
 
-
-
-
-      
-    <button class="add-btn" id="connectFolderQuickBtn">
+      <!-- 🔥 BOUTON POUR AJOUTER UN DOSSIER (PLUSIEURS DOSSIERS) -->
+      <button class="add-btn" id="addFolderBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        Connecter le dossier musique du téléphone
+        📁 Ajouter un dossier
       </button>
+
+      <!-- Affichage des dossiers sélectionnés -->
+      <div id="folderList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+      <div id="folderStatus" style="font-size:12px;color:var(--muted);margin-bottom:8px;">Aucun dossier sélectionné</div>
+
       <button class="add-btn" id="addBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Ajouter des morceaux (MP3, WAV, M4A…)
@@ -949,7 +951,7 @@
       <input type="file" id="fileInput" accept="audio/*" multiple>
 
       <ul class="track-list" id="trackList"></ul>
-      <div class="empty" id="emptyState">Votre bibliothèque est vide.<br>Connectez le dossier musique de votre téléphone, ou ajoutez des morceaux manuellement.</div>
+      <div class="empty" id="emptyState">Votre bibliothèque est vide.<br>Cliquez sur « Ajouter un dossier » pour importer votre musique.</div>
     </div>
 
     <p class="foot-note">Vos morceaux sont enregistrés uniquement sur cet appareil.<br>Aucun fichier n'est envoyé sur internet.</p>
@@ -1207,7 +1209,9 @@
 </div>
 
 <script>
-/* ---------------- IndexedDB storage ---------------- */
+/* ============================================================
+   PARTIE 1 : INDEXEDDB ET FONCTIONS DE BASE
+   ============================================================ */
 const DB_NAME = 'sillon-player';
 const DB_VERSION = 3;
 const STORE = 'tracks';
@@ -1461,80 +1465,75 @@ function guessFromFilename(filename){
   return { artist: null, title: base };
 }
 
-/* ---------------- Dossier de musique du téléphone (File System Access API) ---------------- */
+/* ============================================================
+   PARTIE 2 : GESTION DES DOSSIERS MULTIPLES
+   ============================================================ */
 const AUDIO_EXT_RE = /\.(mp3|wav|m4a|ogg|oga|flac|aac|opus)$/i;
 const supportsFS = 'showDirectoryPicker' in window;
 
-let folderHandle = null;
-let folderConnected = false;
+// Tableau pour stocker les handles des dossiers sélectionnés
+let folderHandles = [];
 let folderScanning = false;
 
-const folderStatusText = document.getElementById('folderStatusText');
-const connectFolderBtn = document.getElementById('connectFolderBtn');
-const rescanFolderBtn = document.getElementById('rescanFolderBtn');
-const connectFolderQuickBtn = document.getElementById('connectFolderQuickBtn');
+// Références aux éléments HTML
+const folderStatusEl = document.getElementById('folderStatus');
+const folderListEl = document.getElementById('folderList');
+const addFolderBtn = document.getElementById('addFolderBtn');
 
-function renderFolderStatus(){
-  if (!supportsFS){
-    folderStatusText.textContent = "Non disponible sur ce navigateur — utilisez « Ajouter des morceaux »";
-    connectFolderBtn.style.display = 'none';
-    rescanFolderBtn.style.display = 'none';
-    connectFolderQuickBtn.style.display = 'none';
+// Fonction pour ajouter un dossier
+async function addFolder() {
+  if (!supportsFS) {
+    alert("Votre navigateur ne supporte pas la sélection de dossier. Utilisez Chrome ou Edge.");
     return;
   }
-  connectFolderQuickBtn.style.display = 'flex';
-  if (folderScanning){
-    folderStatusText.textContent = 'Lecture du dossier en cours…';
-    connectFolderBtn.style.display = 'none';
-    rescanFolderBtn.style.display = 'none';
-  } else if (folderHandle && folderConnected){
-    const count = playlist.filter(t => t.source === 'folder').length;
-    folderStatusText.textContent = 'Connecté : ' + (folderHandle.name || 'dossier') + ' — ' + count + (count === 1 ? ' morceau' : ' morceaux');
-    connectFolderBtn.textContent = 'Changer de dossier';
-    connectFolderBtn.style.display = 'block';
-    rescanFolderBtn.style.display = 'block';
-  } else if (folderHandle && !folderConnected){
-    folderStatusText.textContent = 'Autorisation nécessaire pour continuer';
-    connectFolderBtn.textContent = 'Reconnecter';
-    connectFolderBtn.style.display = 'block';
-    rescanFolderBtn.style.display = 'none';
-  } else {
-    folderStatusText.textContent = 'Non connecté';
-    connectFolderBtn.textContent = 'Connecter un dossier';
-    connectFolderBtn.style.display = 'block';
-    rescanFolderBtn.style.display = 'none';
-  }
-}
-
-async function walkDirectory(dirHandle, path, out, depth){
-  if (depth > 4) return;
-  for await (const [name, handle] of dirHandle.entries()){
-    if (handle.kind === 'file'){
-      if (AUDIO_EXT_RE.test(name)) out.push({ path: path + name, name, handle });
-    } else if (handle.kind === 'directory'){
-      await walkDirectory(handle, path + name + '/', out, depth + 1);
+  try {
+    const handle = await window.showDirectoryPicker();
+    const perm = await handle.requestPermission({ mode: 'read' });
+    if (perm === 'granted') {
+      folderHandles.push(handle);
+      renderFolderStatus();
+      await scanAllFolders();
     }
+  } catch (e) {
+    // L'utilisateur a annulé
   }
 }
 
-async function scanFolder(){
-  if (!folderHandle) return;
+// Fonction pour supprimer un dossier
+async function removeFolder(index) {
+  if (index < 0 || index >= folderHandles.length) return;
+  folderHandles.splice(index, 1);
+  renderFolderStatus();
+  await scanAllFolders();
+}
+
+// Fonction pour scanner tous les dossiers
+async function scanAllFolders() {
+  if (folderScanning) return;
   folderScanning = true;
   renderFolderStatus();
 
-  const found = [];
-  try {
-    await walkDirectory(folderHandle, '', found, 0);
-  } catch (e) {
-    console.warn('Lecture du dossier impossible', e);
-  }
-
+  // Supprimer les anciennes pistes provenant des dossiers
   playlist = playlist.filter(t => t.source !== 'folder');
 
-  for (const f of found){
-    let tags = null;
+  const found = [];
+  for (const handle of folderHandles) {
+    try {
+      await walkDirectory(handle, '', found, 0);
+    } catch (e) {
+      console.warn('Erreur de lecture du dossier:', e);
+    }
+  }
+
+  // Ajouter les nouvelles pistes
+  for (const f of found) {
     let file;
-    try { file = await f.handle.getFile(); } catch (e) { continue; }
+    try {
+      file = await f.handle.getFile();
+    } catch (e) {
+      continue;
+    }
+    let tags = null;
     if (/\.mp3$/i.test(f.name)) tags = await parseID3(file);
     const guess = guessFromFilename(f.name);
     const title = (tags && tags.title) || guess.title || niceName(f.name);
@@ -1555,69 +1554,54 @@ async function scanFolder(){
   renderFolderStatus();
 }
 
-async function connectMusicFolder(){
-  if (!supportsFS){
-    alert("Votre navigateur ne permet pas de connecter un dossier automatiquement. Utilisez « Ajouter des morceaux » pour importer votre musique.");
+// Parcourir un dossier récursivement
+async function walkDirectory(dirHandle, path, out, depth) {
+  if (depth > 5) return; // Limite de profondeur
+  for await (const [name, handle] of dirHandle.entries()) {
+    if (handle.kind === 'file') {
+      if (AUDIO_EXT_RE.test(name)) {
+        out.push({ path: path + name, name, handle });
+      }
+    } else if (handle.kind === 'directory') {
+      await walkDirectory(handle, path + name + '/', out, depth + 1);
+    }
+  }
+}
+
+// Afficher l'état des dossiers
+function renderFolderStatus() {
+  const count = folderHandles.length;
+  
+  if (count === 0) {
+    folderStatusEl.textContent = 'Aucun dossier sélectionné';
+    folderListEl.innerHTML = '';
     return;
   }
-  try {
-    const handle = await window.showDirectoryPicker();
-    const perm = await handle.requestPermission({ mode: 'read' });
-    if (perm !== 'granted') return;
-    folderHandle = handle;
-    folderConnected = true;
-    await dbSetMeta('musicFolder', handle);
-    await scanFolder();
-  } catch (e) {
-    /* choix annulé par l'utilisateur */
-  }
-  renderFolderStatus();
+
+  folderStatusEl.textContent = count + ' dossier' + (count > 1 ? 's' : '') + ' sélectionné' + (count > 1 ? 's' : '');
+
+  folderListEl.innerHTML = folderHandles.map((h, i) => `
+    <span style="background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 10px 4px 14px;font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+      📁 ${h.name}
+      <button data-index="${i}" class="remove-folder-btn" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;font-size:14px;">✕</button>
+    </span>
+  `).join('');
+
+  // Événements pour les boutons de suppression
+  folderListEl.querySelectorAll('.remove-folder-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const idx = parseInt(e.currentTarget.dataset.index);
+      await removeFolder(idx);
+    });
+  });
 }
 
-async function reconnectMusicFolder(){
-  if (!folderHandle) return connectMusicFolder();
-  try {
-    const perm = await folderHandle.requestPermission({ mode: 'read' });
-    if (perm === 'granted'){
-      folderConnected = true;
-      await scanFolder();
-    }
-  } catch (e) { /* ignore */ }
-  renderFolderStatus();
-}
+// Bouton "Ajouter un dossier"
+addFolderBtn.addEventListener('click', addFolder);
 
-connectFolderBtn.addEventListener('click', () => {
-  if (folderHandle && !folderConnected) reconnectMusicFolder();
-  else connectMusicFolder();
-});
-connectFolderQuickBtn.addEventListener('click', () => {
-  if (folderHandle && !folderConnected) reconnectMusicFolder();
-  else connectMusicFolder();
-});
-rescanFolderBtn.addEventListener('click', () => {
-  if (folderHandle && folderConnected) scanFolder();
-});
-
-async function trySilentFolderLoad(){
-  if (!supportsFS){ renderFolderStatus(); return; }
-  try {
-    const meta = await dbGetMeta('musicFolder');
-    if (meta && meta.handle){
-      folderHandle = meta.handle;
-      const perm = await folderHandle.queryPermission({ mode: 'read' });
-      if (perm === 'granted'){
-        folderConnected = true;
-        await scanFolder();
-      } else {
-        folderConnected = false;
-      }
-    }
-  } catch (e) {
-    console.warn('Reconnexion automatique au dossier impossible', e);
-  }
-  renderFolderStatus();
-}
-
+/* ============================================================
+   PARTIE 3 : RESTE DU CODE (lecteur, playlists, etc.)
+   ============================================================ */
 /* ---------------- Modal helpers ---------------- */
 const modalOverlay = document.getElementById('modalOverlay');
 const modalBox = document.getElementById('modalBox');
@@ -1659,7 +1643,7 @@ function renderList(){
 
   if (!playlist.length){
     el.emptyState.style.display = 'block';
-    el.emptyState.innerHTML = 'Votre bibliothèque est vide.<br>Ajoutez vos premiers morceaux ci-dessus.';
+    el.emptyState.innerHTML = 'Votre bibliothèque est vide.<br>Cliquez sur « Ajouter un dossier » pour importer votre musique.';
   } else if (filtered.length === 0){
     el.emptyState.style.display = 'block';
     el.emptyState.innerHTML = query
@@ -1821,7 +1805,7 @@ function stopPulse(){
   el.platter.style.boxShadow = '';
 }
 
-/* ---- EQ controls (fader-style, now living in Paramètres) ---- */
+/* ---- EQ controls ---- */
 const eqToggle = document.getElementById('eqToggle');
 const eqBody = document.getElementById('eqBody');
 const eqPreset = document.getElementById('eqPreset');
@@ -1900,7 +1884,7 @@ syncFader(eqMid, eqMidVal, eqMidFill);
 syncFader(eqTreble, eqTrebleVal, eqTrebleFill);
 updateEqUI();
 
-/* ---------------- Events ---------------- */
+/* ---------------- Audio events ---------------- */
 audio.addEventListener('play', () => {
   setPlayingVisual(true);
   setupAnalyser();
@@ -1978,9 +1962,11 @@ el.fileInput.addEventListener('change', async (e) => {
   }
 });
 
-/* ---------------- Albums ---------------- */
+/* ============================================================
+   PARTIE 4 : ALBUMS, ARTISTES, PLAYLISTS
+   ============================================================ */
 function getGroups(keyFn){
-  const map = new Map(); // normalized key -> { label, idxs }
+  const map = new Map();
   playlist.forEach((t, i) => {
     const raw = keyFn(t);
     const key = normKey(raw);
@@ -2020,7 +2006,6 @@ function renderAlbums(){
   });
 }
 
-/* ---------------- Artistes ---------------- */
 function renderArtists(){
   const list = document.getElementById('artistList');
   const empty = document.getElementById('artistsEmpty');
@@ -2263,7 +2248,7 @@ function renderSettings(){
 }
 
 document.getElementById('resetDataBtn').addEventListener('click', async () => {
-  if (!confirm("Ceci supprimera définitivement les morceaux ajoutés manuellement, toutes vos playlists, et oubliera le dossier de musique connecté. Continuer ?")) return;
+  if (!confirm("Ceci supprimera définitivement les morceaux ajoutés manuellement, toutes vos playlists, et oubliera les dossiers connectés. Continuer ?")) return;
   audio.pause();
   if (objectUrl) URL.revokeObjectURL(objectUrl);
   await dbClear(STORE);
@@ -2273,8 +2258,7 @@ document.getElementById('resetDataBtn').addEventListener('click', async () => {
   playlists = [];
   currentIndex = -1;
   activeFilter = null;
-  folderHandle = null;
-  folderConnected = false;
+  folderHandles = [];
   el.title.textContent = 'Aucun morceau chargé';
   el.artist.textContent = 'Ajoutez de la musique ci-dessous';
   setPlayingVisual(false);
@@ -2318,7 +2302,7 @@ navItems.forEach(btn => {
   } catch (err) {
     console.warn('IndexedDB unavailable', err);
   }
-  await trySilentFolderLoad();
+  renderFolderStatus();
 })();
 
 if ('serviceWorker' in navigator) {
@@ -2326,20 +2310,6 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
 </script>
 
   
